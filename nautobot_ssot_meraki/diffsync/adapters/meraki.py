@@ -1,19 +1,24 @@
 """Nautobot SSoT for Meraki Adapter for Meraki SSoT plugin."""
 
 from diffsync import DiffSync
+from diffsync.exceptions import ObjectNotFound
+from nautobot_ssot_meraki.diffsync.models.meraki import MerakiNetwork, MerakiDevice
 
 
 class MerakiAdapter(DiffSync):
     """DiffSync adapter for Meraki."""
 
-    top_level = []
+    network = MerakiNetwork
+    device = MerakiDevice
 
-    def __init__(self, *args, job=None, sync=None, client=None, **kwargs):
+    top_level = ["network", "device"]
+
+    def __init__(self, job, sync, client, *args, **kwargs):
         """Initialize Meraki.
 
         Args:
-            job (object, optional): Meraki job. Defaults to None.
-            sync (object, optional): Meraki DiffSync. Defaults to None.
+            job (object): Meraki SSoT job.
+            sync (object): Meraki DiffSync.
             client (object): Meraki API client connection object.
         """
         super().__init__(*args, **kwargs)
@@ -21,6 +26,25 @@ class MerakiAdapter(DiffSync):
         self.sync = sync
         self.conn = client
 
+    def load_networks(self):
+        """Load networks from Meraki dashboard into DiffSync models."""
+        for net in self.conn.get_org_networks():
+            try:
+                self.get(self.network, net["name"])
+                self.job.log_warning(message=f"Duplicate network {net['name']} found and being skipped.")
+            except ObjectNotFound:
+                new_network = self.network(
+                    name=net["name"],
+                    timezone=net["timeZone"],
+                    notes=net["notes"],
+                    tags=net["tags"],
+                    uuid=None,
+                )
+                self.add(new_network)
+
     def load(self):
         """Load data from Meraki into DiffSync models."""
-        raise NotImplementedError
+        if self.conn.validate_organization_exists():
+            self.load_networks()
+        else:
+            self.job.log_failure(message="Specified organization ID not found in Meraki dashboard.")
