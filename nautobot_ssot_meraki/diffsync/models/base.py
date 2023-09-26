@@ -29,8 +29,7 @@ class Device(DiffSyncModel):
         "status",
         "role",
         "model",
-        "site",
-        "ip_address",
+        "network",
     )
     _children = {}
 
@@ -38,7 +37,6 @@ class Device(DiffSyncModel):
     status: Optional[str]
     role: Optional[str]
     model: Optional[str]
-    site: Optional[str]
-    ip_address = Optional[str]
+    network: str
 
-    uuid = Optional[UUID]
+    uuid: Optional[UUID]
