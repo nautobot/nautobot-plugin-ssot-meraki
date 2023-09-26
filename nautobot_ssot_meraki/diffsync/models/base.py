@@ -12,13 +12,14 @@ class Network(DiffSyncModel):
 
     _modelname = "network"
     _identifiers = ("name",)
-    _attributes = ("timezone", "notes", "tags")
+    _attributes = ("timezone", "notes", "tags", "tenant")
     _children = {}
 
     name: str
     timezone: Optional[str]
     notes: Optional[str]
     tags: Optional[List[str]]
+    tenant: Optional[str]
 
     uuid: Optional[UUID]
 
@@ -28,18 +29,15 @@ class Device(DiffSyncModel):
 
     _modelname = "device"
     _identifiers = ("name",)
-    _attributes = (
-        "status",
-        "role",
-        "model",
-        "network",
-    )
+    _attributes = ("serial", "status", "role", "model", "network", "tenant")
     _children = {}
 
     name: str
+    serial: Optional[str]
     status: Optional[str]
     role: Optional[str]
     model: Optional[str]
     network: str
+    tenant: Optional[str]
 
     uuid: Optional[UUID]
