@@ -1,7 +1,8 @@
 """Nautobot DiffSync models for Meraki SSoT."""
+from django.contrib.contenttypes.models import ContentType
 from nautobot.dcim.models import Device as NewDevice
 from nautobot.dcim.models import Site, DeviceRole
-from nautobot.extras.models import Status
+from nautobot.extras.models import Note, Status
 from nautobot_ssot_meraki.diffsync.models.base import Device, Network
 
 
@@ -13,11 +14,18 @@ class NautobotNetwork(Network):
         """Create Site in Nautobot from NautobotNetwork object."""
         new_site = Site(
             name=ids["name"],
-            description=attrs["notes"],
             status=Status.objects.get(name="Active"),
             time_zone=attrs["timezone"],
         )
         new_site.validated_save()
+        if attrs.get("notes"):
+            new_note = Note(
+                note=attrs["notes"],
+                user=diffsync.job_result.user,
+                assigned_object_type=ContentType.objects.get_for_model,
+                assigned_object_id=new_site.id,
+            )
+            new_note.validated_save()
         if attrs.get("tags"):
             new_site.tags.set(attrs["tags"])
         new_site.validated_save()
@@ -29,7 +37,13 @@ class NautobotNetwork(Network):
         if "timezone" in attrs:
             site.time_zone = attrs["timezone"]
         if "notes" in attrs:
-            site.description = attrs["notes"]
+            new_note = Note(
+                note=attrs["notes"],
+                user=self.diffsync.job_result.user,
+                assigned_object_type=ContentType.objects.get_for_model,
+                assigned_object_id=site.id,
+            )
+            new_note.validated_save()
         if "tags" in attrs:
             site.tags.set(attrs["tags"])
         site.validated_save()
