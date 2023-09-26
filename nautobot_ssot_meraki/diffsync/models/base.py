@@ -1,7 +1,23 @@
 """DiffSyncModel subclasses for Nautobot-to-Meraki data sync."""
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 from diffsync import DiffSyncModel
+
+
+class Network(DiffSyncModel):
+    """DiffSync model for Meraki networks."""
+
+    _modelname = "network"
+    _identifiers = ("name",)
+    _attributes = ("timezone", "notes", "tags")
+    _children = {}
+
+    name: str
+    timezone: Optional[str]
+    notes: Optional[str]
+    tags: Optional[List[str]]
+
+    uuid: Optional[UUID]
 
 
 class Device(DiffSyncModel):
