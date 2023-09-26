@@ -2,10 +2,13 @@
 from typing import List, Optional
 from uuid import UUID
 from diffsync import DiffSyncModel
+from diffsync.enum import DiffSyncModelFlags
 
 
 class Network(DiffSyncModel):
     """DiffSync model for Meraki networks."""
+
+    model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
 
     _modelname = "network"
     _identifiers = ("name",)
