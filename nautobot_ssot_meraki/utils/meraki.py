@@ -11,6 +11,7 @@ class DashboardClient:
         self.org_id = org_id
         self.token = token
         self.conn = self.connect_dashboard()
+        self.network_map = {}
 
     def connect_dashboard(self):  # pylint: disable=inconsistent-return-statements
         """Connect to Meraki dashboard and return connection object."""
@@ -52,6 +53,7 @@ class DashboardClient:
         networks = []
         try:
             networks = self.conn.organizations.getOrganizationNetworks(organizationId=self.org_id)
+            self.network_map = {net["name"]: net for net in networks}
         except meraki.APIError as err:
             self.logger.log_failure(
                 message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
