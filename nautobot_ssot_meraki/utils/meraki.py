@@ -29,9 +29,6 @@ class DashboardClient:
     def validate_organization_exists(self):
         """Confirm defined organization ID is seen in Dashboard to confirm we have access.
 
-        Args:
-            conn (meraki.DashboardAPI): Connection object to Meraki dashboard.
-
         Returns:
             boolean: Whether Organiztion ID was found in Dashboard.
         """
@@ -43,9 +40,6 @@ class DashboardClient:
 
     def get_org_networks(self):
         """Retrieve all networks for specified Organization ID.
-
-        Args:
-            conn (meraki.DashboardAPI): Connection object to Meraki dashboard.
 
         Returns:
             list: List of found networks. Empty list if error retrieving networks.
@@ -62,9 +56,6 @@ class DashboardClient:
 
     def get_org_devices(self):
         """Retrieve all devices for specified Organization ID.
-
-        Args:
-            conn (meraki.DashboardAPI): Connection object to Meraki dashboard.
 
         Returns:
             list: List of found devices. Empty list if error retrieving devices.
