@@ -1,13 +1,34 @@
 """Nautobot DiffSync models for Meraki SSoT."""
-from diffsync import DiffSyncModel
-
 from nautobot.dcim.models import Device as NewDevice
 from nautobot.dcim.models import Site, DeviceRole
 from nautobot.extras.models import Status
-from nautobot_ssot_meraki.diffsync.models.base import Device
+from nautobot_ssot_meraki.diffsync.models.base import Device, Network
 
 
-class NautobotDevice(DiffSyncModel):
+class NautobotNetwork(Network):
+    """Nautobot implementation of Meraki Device model."""
+
+    @classmethod
+    def create(cls, diffsync, ids, attrs):
+        """Create Site in Nautobot from NautobotNetwork object."""
+        new_site = Site(
+            name=ids["name"],
+            description=attrs["notes"],
+            status=Status.objects.get(name="Active"),
+            time_zone=attrs["timezone"],
+        )
+        new_site.validated_save()
+        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+
+    def update(self, attrs):
+        """Update Site in Nautobot from NautobotNetwork object."""
+        site = Site.objects.get(id=attrs["uuid"])
+
+        site.validated_save()
+        return super().update(attrs)
+
+
+class NautobotDevice(Device):
     """Nautobot implementation of Meraki Device model."""
 
     @classmethod
