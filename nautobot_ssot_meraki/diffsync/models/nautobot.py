@@ -18,12 +18,20 @@ class NautobotNetwork(Network):
             time_zone=attrs["timezone"],
         )
         new_site.validated_save()
+        if attrs.get("tags"):
+            new_site.tags.set(attrs["tags"])
+        new_site.validated_save()
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
     def update(self, attrs):
         """Update Site in Nautobot from NautobotNetwork object."""
         site = Site.objects.get(id=attrs["uuid"])
-
+        if "timezone" in attrs:
+            site.time_zone = attrs["timezone"]
+        if "notes" in attrs:
+            site.description = attrs["notes"]
+        if "tags" in attrs:
+            site.tags.set(attrs["tags"])
         site.validated_save()
         return super().update(attrs)
 
