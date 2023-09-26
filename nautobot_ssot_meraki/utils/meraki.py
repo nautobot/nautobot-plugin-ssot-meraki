@@ -68,3 +68,21 @@ class DashboardClient:
                 message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
         return devices
+
+    def get_device_status(self, device_name: str):
+        """Retrieve device status from Meraki dashboard.
+
+        Args:
+            device_name (str): Name of Device to pull status for.
+        """
+        status = "dormant"
+        try:
+            response = self.conn.organizations.getOrganizationDevicesStatuses(organizationId=self.org_id)
+            statuses = {dev["name"]: dev["status"] for dev in response}
+            if device_name in statuses:
+                status = statuses[device_name]
+        except meraki.APIError as err:
+            self.logger.log_failure(
+                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            )
+        return status
