@@ -21,8 +21,8 @@ class NautobotNetwork(Network):
         if attrs.get("notes"):
             new_note = Note(
                 note=attrs["notes"],
-                user=diffsync.job_result.user,
-                assigned_object_type=ContentType.objects.get_for_model,
+                user=diffsync.job.request.user,
+                assigned_object_type=ContentType.objects.get_for_model(Site),
                 assigned_object_id=new_site.id,
             )
             new_note.validated_save()
@@ -36,7 +36,7 @@ class NautobotNetwork(Network):
         site = Site.objects.get(id=attrs["uuid"])
         if "timezone" in attrs:
             site.time_zone = attrs["timezone"]
-        if "notes" in attrs:
+        if attrs.get("notes"):
             new_note = Note(
                 note=attrs["notes"],
                 user=self.diffsync.job_result.user,

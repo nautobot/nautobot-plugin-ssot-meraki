@@ -34,12 +34,15 @@ class NautobotAdapter(DiffSync):
             except ObjectNotFound:
                 new_site = self.network(
                     name=site.name,
-                    notes=site.description,
+                    notes="",
                     tags=get_tag_strings(list_tags=site.tags),
                     timezone=site.time_zone,
                     tenant=site.tenant.name if site.tenant else "",
                     uuid=site.id,
                 )
+                if site.notes:
+                    note = site.notes.first()
+                    new_site.note = note.note
                 self.add(new_site)
 
     def load(self):
