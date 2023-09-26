@@ -44,3 +44,6 @@ class MerakiDataSource(DataSource, Job):
         """Load data from Nautobot into DiffSync models."""
         self.target_adapter = nautobot.NautobotAdapter(job=self, sync=self.sync)
         self.target_adapter.load()
+
+
+jobs = [MerakiDataSource]
