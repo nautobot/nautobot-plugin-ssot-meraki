@@ -50,14 +50,15 @@ class Port(DiffSyncModel):
 
     _modelname = "port"
     _identifiers = ("name", "device")
-    _attributes = ("primary", "enabled", "port_type", "port_status")
+    _attributes = ("management", "enabled", "port_type", "port_status", "tagging")
     _children = {}
 
     name: str
     device: str
-    primary: bool
+    management: bool
     enabled: bool
     port_type: str
     port_status: str
+    tagging: bool
 
     uuid: Optional[UUID]
