@@ -43,7 +43,7 @@ class NautobotNetwork(Network):
             new_note = Note(
                 note=attrs["notes"],
                 user=self.diffsync.job_result.user,
-                assigned_object_type=ContentType.objects.get_for_model,
+                assigned_object_type=ContentType.objects.get_for_model(Site),
                 assigned_object_id=site.id,
             )
             new_note.validated_save()
