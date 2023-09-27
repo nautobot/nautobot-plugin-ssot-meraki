@@ -36,7 +36,7 @@ class NautobotNetwork(Network):
 
     def update(self, attrs):
         """Update Site in Nautobot from NautobotNetwork object."""
-        site = Site.objects.get(id=attrs["uuid"])
+        site = Site.objects.get(id=self.uuid)
         if "timezone" in attrs:
             site.time_zone = attrs["timezone"]
         if attrs.get("notes"):
