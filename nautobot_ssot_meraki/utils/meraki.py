@@ -18,6 +18,7 @@ class DashboardClient:
         self.conn = self.connect_dashboard()
         self.network_map = {}
 
+    def connect_dashboard(self) -> meraki.DashboardAPI:  # pylint: disable=inconsistent-return-statements
         """Connect to Meraki dashboard and return connection object.
 
         Raises:
@@ -37,7 +38,7 @@ class DashboardClient:
         except meraki.APIError as err:
             self.logger.log_failure(f"Unable to connect to Meraki dashboard: {err.message}")
 
-    def validate_organization_exists(self):
+    def validate_organization_exists(self) -> bool:
         """Confirm defined organization ID is seen in Dashboard to confirm we have access.
 
         Returns:
@@ -49,7 +50,7 @@ class DashboardClient:
             return True
         return False
 
-    def get_org_networks(self):
+    def get_org_networks(self) -> list:
         """Retrieve all networks for specified Organization ID.
 
         Returns:
@@ -65,7 +66,7 @@ class DashboardClient:
             )
         return networks
 
-    def get_org_devices(self):
+    def get_org_devices(self) -> list:
         """Retrieve all devices for specified Organization ID.
 
         Returns:
@@ -80,7 +81,7 @@ class DashboardClient:
             )
         return devices
 
-    def get_device_statuses(self):
+    def get_device_statuses(self) -> dict:
         """Retrieve device statuses from Meraki dashboard.
 
         Returns:
@@ -96,8 +97,7 @@ class DashboardClient:
             )
         return statuses
 
-
-def parse_hostname_for_role(dev_hostname: str):
+def parse_hostname_for_role(dev_hostname: str) -> str:
     """Parse device hostname to get Device Role.
 
     Args:
