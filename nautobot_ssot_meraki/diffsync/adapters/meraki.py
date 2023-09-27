@@ -30,15 +30,15 @@ class MerakiAdapter(DiffSync):
 
     def load_networks(self):
         """Load networks from Meraki dashboard into DiffSync models."""
+        if self.tenant:
+            tenant = self.tenant.name
+        else:
+            tenant = None
         for net in self.conn.get_org_networks():
             try:
                 self.get(self.network, net["name"])
                 self.job.log_warning(message=f"Duplicate network {net['name']} found and being skipped.")
             except ObjectNotFound:
-                if self.tenant:
-                    tenant = self.tenant.name
-                else:
-                    tenant = None
                 new_network = self.network(
                     name=net["name"],
                     timezone=net["timeZone"],
