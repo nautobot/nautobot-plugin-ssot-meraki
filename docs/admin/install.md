@@ -42,7 +42,7 @@ Once installed, the plugin needs to be enabled in your Nautobot configuration. T
 
 ```python
 # In your nautobot_config.py
-PLUGINS = ["nautobot_ssot_meraki"]
+PLUGINS = ["nautobot_ssot", "nautobot_ssot_meraki"]
 
 # PLUGINS_CONFIG = {
 #   "nautobot_ssot_meraki": {
