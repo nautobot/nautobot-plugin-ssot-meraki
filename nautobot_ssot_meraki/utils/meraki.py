@@ -82,6 +82,22 @@ class DashboardClient:
             )
         return devices
 
+    def get_org_uplink_statuses(self) -> dict:
+        """Retrieve all appliance uplink statuses for specified Organization ID.
+
+        Returns:
+            dict: Map of network IDs to uplink settings for those devices in specified organization ID.
+        """
+        settings = {}
+        try:
+            result = self.conn.organizations.getOrganizationUplinksStatuses(organizationId=self.org_id)
+            settings = {net["networkId"]: net for net in result}
+        except meraki.APIError as err:
+            self.logger.log_failure(
+                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            )
+        return settings
+
     def get_device_statuses(self) -> dict:
         """Retrieve device statuses from Meraki dashboard.
 
@@ -97,6 +113,46 @@ class DashboardClient:
                 message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
         return statuses
+
+    def get_management_port_names(self, serial: str) -> list:
+        """Retrieve device management port names from Meraki dashboard.
+
+        Args:
+            serial (str): Serial of device to retrieve management ports for.
+
+        Returns:
+            list: List of management port names.
+        """
+        ports = []
+        try:
+            result = self.conn.devices.getDeviceManagementInterface(serial=serial)
+            if result.get("ddnsHostnames"):
+                result.pop("ddnsHostnames")
+            ports = result.keys()
+        except meraki.APIError as err:
+            self.logger.log_failure(
+                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            )
+        return ports
+
+    def get_uplink_settings(self, serial: str) -> dict:
+        """Retrieve settings for uplink ports from Meraki dashboard.
+
+        Args:
+            serial (str): Serial of device to retrieve uplink settings for.
+
+        Returns:
+            dict: Dictionary of uplink settings for device with specified serial.
+        """
+        ports = {}
+        try:
+            ports = self.conn.appliance.getDeviceApplianceUplinksSettings(serial=serial)
+        except meraki.APIError as err:
+            self.logger.log_failure(
+                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            )
+        return ports["interfaces"]
+
 
 def parse_hostname_for_role(dev_hostname: str) -> str:
     """Parse device hostname to get Device Role.
