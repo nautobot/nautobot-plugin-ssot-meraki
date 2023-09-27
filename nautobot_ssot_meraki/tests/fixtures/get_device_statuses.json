@@ -1,46 +1,4 @@
 {
-    "Lab01": {
-        "name": "Lab01",
-        "serial": "D7JB-OH13-QFAG",
-        "mac": "60:00:4j:7j:5s:00",
-        "publicIp": "37.246.48.047",
-        "networkId": "H_203630551508078460",
-        "status": "online",
-        "lastReportedAt": "2877-54-74T26:13:64K",
-        "productType": "appliance",
-        "components": {
-            "powerSupplies": []
-        },
-        "model": "MX400",
-        "tags": [],
-        "usingCellularFailover": false,
-        "wan1Ip": "47.88.30.14",
-        "wan1Gateway": "47.88.30.1",
-        "wan1IpType": "static",
-        "wan1PrimaryDns": "1.1.1.1",
-        "wan1SecondaryDns": "1.0.0.1",
-        "wan2Ip": null
-    },
-    "HQ01": {
-        "name": "HQ01",
-        "serial": "V4GD-ABDP-YVCK",
-        "mac": "07:77:7i:8x:2a:nj",
-        "publicIp": "85.612.13.727",
-        "networkId": "L_165471703274884707",
-        "status": "online",
-        "lastReportedAt": "7376-34-61L20:55:35X",
-        "productType": "appliance",
-        "components": {
-            "powerSupplies": []
-        },
-        "model": "MX400",
-        "tags": [],
-        "usingCellularFailover": false,
-        "wan1Ip": "36.54.12.32",
-        "wan1Gateway": "36.54.12.1",
-        "wan1IpType": "static",
-        "wan1PrimaryDns": "1.1.1.1",
-        "wan1SecondaryDns": "1.0.0.1",
-        "wan2Ip": null
-    }
+    "Lab01": "online",
+    "HQ01": "online"
 }
