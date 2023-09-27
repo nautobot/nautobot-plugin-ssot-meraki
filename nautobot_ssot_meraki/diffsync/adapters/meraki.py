@@ -76,6 +76,7 @@ class MerakiAdapter(DiffSync):
                     network=self.conn.network_map[dev["networkId"]]["name"],
                     tenant=tenant,
                     uuid=None,
+                    version=dev["firmware"],
                 )
                 self.add(new_dev)
 
