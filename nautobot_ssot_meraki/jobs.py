@@ -1,6 +1,7 @@
 """Jobs for Meraki SSoT integration."""
 from django.conf import settings
-from nautobot.extras.jobs import BooleanVar, Job
+from nautobot.extras.jobs import BooleanVar, Job, ObjectVar
+from nautobot.tenancy.models import Tenant
 from nautobot_ssot.jobs.base import DataSource
 from nautobot_ssot_meraki.diffsync.adapters import meraki, nautobot
 from nautobot_ssot_meraki.utils.meraki import DashboardClient
@@ -15,6 +16,12 @@ class MerakiDataSource(DataSource, Job):
     """Meraki SSoT Data Source."""
 
     debug = BooleanVar(description="Enable for more verbose debug logging", default=False)
+    tenant = ObjectVar(model=Tenant, label="Tenant", required=False)
+
+    def __init__(self):
+        """Initialize job objects."""
+        super().__init__()
+        self.data = None
 
     class Meta:  # pylint: disable=too-few-public-methods
         """Meta data for Meraki."""
@@ -37,13 +44,19 @@ class MerakiDataSource(DataSource, Job):
     def load_source_adapter(self):
         """Load data from Meraki into DiffSync models."""
         client = DashboardClient(logger=self, org_id=PLUGIN_CFG["meraki_org_id"], token=PLUGIN_CFG["meraki_token"])
-        self.source_adapter = meraki.MerakiAdapter(job=self, sync=self.sync, client=client)
+        self.source_adapter = meraki.MerakiAdapter(job=self, sync=self.sync, client=client, tenant=self.data["tenant"])
         self.source_adapter.load()
 
     def load_target_adapter(self):
         """Load data from Nautobot into DiffSync models."""
         self.target_adapter = nautobot.NautobotAdapter(job=self, sync=self.sync)
         self.target_adapter.load()
+
+    def run(self, data, commit):
+        """Ensure Job form variables are set."""
+        self.commit = commit
+        self.data = data
+        super().run(data, commit)
 
 
 jobs = [MerakiDataSource]

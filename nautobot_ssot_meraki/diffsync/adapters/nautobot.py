@@ -37,7 +37,7 @@ class NautobotAdapter(DiffSync):
                     notes="",
                     tags=get_tag_strings(list_tags=site.tags),
                     timezone=site.time_zone,
-                    tenant=site.tenant.name if site.tenant else "",
+                    tenant=site.tenant.name if site.tenant else None,
                     uuid=site.id,
                 )
                 if site.notes:

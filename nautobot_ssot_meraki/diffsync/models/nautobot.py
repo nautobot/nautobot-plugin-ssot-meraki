@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from nautobot.dcim.models import Device as NewDevice
 from nautobot.dcim.models import Site, DeviceRole
 from nautobot.extras.models import Note, Status
+from nautobot.tenancy.models import Tenant
 from nautobot_ssot_meraki.diffsync.models.base import Device, Network
 
 
@@ -28,6 +29,8 @@ class NautobotNetwork(Network):
             new_note.validated_save()
         if attrs.get("tags"):
             new_site.tags.set(attrs["tags"])
+        if attrs.get("tenant"):
+            new_site.tenant = Tenant.objects.get(name=attrs["tenant"])
         new_site.validated_save()
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
@@ -46,6 +49,11 @@ class NautobotNetwork(Network):
             new_note.validated_save()
         if "tags" in attrs:
             site.tags.set(attrs["tags"])
+        if "tenant" in attrs:
+            if attrs.get("tenant"):
+                site.tenant = Tenant.objects.get(name=attrs["tenant"])
+            else:
+                site.tenant = None
         site.validated_save()
         return super().update(attrs)
 
