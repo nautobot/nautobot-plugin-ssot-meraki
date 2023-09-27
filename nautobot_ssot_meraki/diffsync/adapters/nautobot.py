@@ -42,7 +42,7 @@ class NautobotAdapter(DiffSync):
                 )
                 if site.notes:
                     note = site.notes.first()
-                    new_site.note = note.note
+                    new_site.notes = note.note
                 self.add(new_site)
 
     def load(self):
