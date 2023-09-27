@@ -29,7 +29,7 @@ class Device(DiffSyncModel):
 
     _modelname = "device"
     _identifiers = ("name",)
-    _attributes = ("notes", "serial", "status", "role", "model", "network", "tenant")
+    _attributes = ("notes", "serial", "status", "role", "model", "network", "tenant", "version")
     _children = {}
 
     name: str
@@ -40,5 +40,6 @@ class Device(DiffSyncModel):
     model: Optional[str]
     network: str
     tenant: Optional[str]
+    version: Optional[str]
 
     uuid: Optional[UUID]
