@@ -18,8 +18,14 @@ class DashboardClient:
         self.conn = self.connect_dashboard()
         self.network_map = {}
 
-    def connect_dashboard(self):  # pylint: disable=inconsistent-return-statements
-        """Connect to Meraki dashboard and return connection object."""
+        """Connect to Meraki dashboard and return connection object.
+
+        Raises:
+            err: APIError if issue with connecting to Meraki dashboard.
+
+        Returns:
+            meraki.DashboardAPI: Connection to Meraki dashboard.
+        """
         try:
             dashboard = meraki.DashboardAPI(
                 api_key=self.token,
@@ -35,7 +41,7 @@ class DashboardClient:
         """Confirm defined organization ID is seen in Dashboard to confirm we have access.
 
         Returns:
-            boolean: Whether Organiztion ID was found in Dashboard.
+            bool: Whether Organiztion ID was found in Dashboard.
         """
         orgs = self.conn.organizations.getOrganizations()
         ids = [org["id"] for org in orgs]
@@ -75,7 +81,11 @@ class DashboardClient:
         return devices
 
     def get_device_statuses(self):
-        """Retrieve device statuses from Meraki dashboard."""
+        """Retrieve device statuses from Meraki dashboard.
+
+        Returns:
+            dict: Dictionary of Device name with its status as value.
+        """
         statuses = {}
         try:
             response = self.conn.organizations.getOrganizationDevicesStatuses(organizationId=self.org_id)
