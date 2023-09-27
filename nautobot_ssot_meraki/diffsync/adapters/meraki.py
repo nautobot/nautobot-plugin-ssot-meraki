@@ -65,7 +65,6 @@ class MerakiAdapter(DiffSync):
                 self.get(self.device, dev["name"])
                 self.job.log_warning(message=f"Duplicate device {dev['name']} found and being skipped.")
             except ObjectNotFound:
-                print(f"Network map: {self.conn.network_map}")
                 new_dev = self.device(
                     name=dev["name"],
                     notes=dev["notes"],
