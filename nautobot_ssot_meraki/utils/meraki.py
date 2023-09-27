@@ -1,5 +1,10 @@
 """Utility functions for working with Meraki."""
+import re
+
 import meraki
+from django.conf import settings
+
+PLUGIN_CFG = settings.PLUGINS_CONFIG["nautobot_ssot_meraki"]
 
 
 class DashboardClient:
@@ -47,7 +52,7 @@ class DashboardClient:
         networks = []
         try:
             networks = self.conn.organizations.getOrganizationNetworks(organizationId=self.org_id)
-            self.network_map = {net["name"]: net for net in networks}
+            self.network_map = {net["id"]: net for net in networks}
         except meraki.APIError as err:
             self.logger.log_failure(
                 message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
@@ -69,20 +74,32 @@ class DashboardClient:
             )
         return devices
 
-    def get_device_status(self, device_name: str):
-        """Retrieve device status from Meraki dashboard.
-
-        Args:
-            device_name (str): Name of Device to pull status for.
-        """
-        status = "dormant"
+    def get_device_statuses(self):
+        """Retrieve device statuses from Meraki dashboard."""
+        statuses = {}
         try:
             response = self.conn.organizations.getOrganizationDevicesStatuses(organizationId=self.org_id)
             statuses = {dev["name"]: dev["status"] for dev in response}
-            if device_name in statuses:
-                status = statuses[device_name]
         except meraki.APIError as err:
             self.logger.log_failure(
                 message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
-        return status
+        return statuses
+
+
+def parse_hostname_for_role(dev_hostname: str):
+    """Parse device hostname to get Device Role.
+
+    Args:
+        dev_hostname (str): Hostname of Device to determine role of.
+
+    Returns:
+        str: Name of DeviceRole. Defaults to Unknown.
+    """
+    dev_role = "UNKNOWN"
+    if PLUGIN_CFG.get("hostname_mapping"):
+        for entry in PLUGIN_CFG["hostname_mapping"]:
+            match = re.match(pattern=entry[0], string=dev_hostname)
+            if match:
+                dev_role = entry[1]
+    return dev_role
