@@ -1,0 +1,38 @@
+[
+    {
+        "name": "Lab01",
+        "serial": "D7JB-OH13-QFAG",
+        "mac": "60:00:4j:7j:5s:00",
+        "networkId": "H_203630551508078460",
+        "productType": "appliance",
+        "model": "MX400",
+        "address": "123 Main St, New York, NY",
+        "lat": 28.5881,
+        "lng": -84.25263,
+        "notes": "Lab device",
+        "tags": [],
+        "wan1Ip": "47.88.30.14",
+        "wan2Ip": null,
+        "configurationUpdatedAt": "2877-54-74T26:13:64K",
+        "firmware": "wired-16-16-9",
+        "url": "https://i384.meraki.com/Lab/n/iWFBbj2y/manage/nodes/new_list/2664516"
+    },
+    {
+        "name": "HQ01",
+        "serial": "V4GD-ABDP-YVCK",
+        "mac": "07:77:7i:8x:2a:nj",
+        "networkId": "L_165471703274884707",
+        "productType": "appliance",
+        "model": "MX400",
+        "address": "123 Main St, DFW, TX",
+        "lat": 21.7321,
+        "lng": -13.64218,
+        "notes": "HQ device",
+        "tags": [],
+        "wan1Ip": "36.54.12.32",
+        "wan2Ip": null,
+        "configurationUpdatedAt": "7376-34-61L20:55:35X",
+        "firmware": "wired-16-16-9",
+        "url": "https://g488.meraki.com/HQ/n/dJBOpa0s/manage/nodes/new_list/7648103"
+    }
+]

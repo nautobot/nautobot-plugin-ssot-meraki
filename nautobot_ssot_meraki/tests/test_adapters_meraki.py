@@ -18,6 +18,9 @@ def load_json(path):
 
 
 GET_ORG_NETWORKS_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_networks.json")
+NETWORK_MAP_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/network_map.json")
+GET_ORG_DEVICES_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_devices.json")
+GET_DEVICE_STATUSES_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_device_statuses.json")
 
 
 class TestMerakiAdapterTestCase(TransactionTestCase):
@@ -29,6 +32,9 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         """Initialize test case."""
         self.meraki_client = MagicMock()
         self.meraki_client.get_org_networks.return_value = GET_ORG_NETWORKS_FIXTURE
+        self.meraki_client.network_map = NETWORK_MAP_FIXTURE
+        self.meraki_client.get_org_devices.return_value = GET_ORG_DEVICES_FIXTURE
+        self.meraki_client.get_device_statuses.return_value = GET_DEVICE_STATUSES_FIXTURE
 
         self.job = MerakiDataSource()
         self.job.job_result = JobResult.objects.create(
@@ -43,4 +49,8 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.assertEqual(
             {net["name"] for net in GET_ORG_NETWORKS_FIXTURE},
             {net.get_unique_id() for net in self.meraki.get_all("network")},
+        )
+        self.assertEqual(
+            {dev["name"] for dev in GET_ORG_DEVICES_FIXTURE},
+            {dev.get_unique_id() for dev in self.meraki.get_all("device")},
         )

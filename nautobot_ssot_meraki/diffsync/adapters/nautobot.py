@@ -2,7 +2,7 @@
 
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
-from nautobot.dcim.models import Site
+from nautobot.dcim.models import Device, Site
 from nautobot_ssot_meraki.diffsync.models.nautobot import NautobotDevice, NautobotNetwork
 from nautobot_ssot_meraki.utils.nautobot import get_tag_strings
 
@@ -45,6 +45,30 @@ class NautobotAdapter(DiffSync):
                     new_site.notes = note.note
                 self.add(new_site)
 
+    def load_devices(self):
+        """Load Device data from Nautobot into DiffSync model."""
+        for dev in Device.objects.all():
+            try:
+                self.get(self.device, dev.name)
+            except ObjectNotFound:
+                new_dev = self.device(
+                    name=dev.name,
+                    serial=dev.serial,
+                    status=dev.status.name,
+                    role=dev.device_role.name,
+                    model=dev.device_type.model,
+                    notes="",
+                    network=dev.site.name,
+                    tenant=dev.tenant.name if dev.tenant else None,
+                    uuid=dev.id,
+                    version=dev._custom_field_data["os_version"] if dev._custom_field_data.get("os_version") else "",
+                )
+                if dev.notes:
+                    note = dev.notes.first()
+                    new_dev.notes = note.note
+                self.add(new_dev)
+
     def load(self):
         """Load data from Nautobot into DiffSync models."""
         self.load_sites()
+        self.load_devices()
