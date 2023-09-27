@@ -27,6 +27,7 @@ class MerakiAdapter(DiffSync):
         self.sync = sync
         self.conn = client
         self.tenant = tenant
+        self.device_map = {}
 
     def load_networks(self):
         """Load networks from Meraki dashboard into DiffSync models."""
@@ -51,13 +52,14 @@ class MerakiAdapter(DiffSync):
 
     def load_devices(self):
         """Load devices from Meraki dashboard into DiffSync models."""
+        self.device_map = {dev["name"]: dev for dev in self.conn.get_org_devices()}
         if self.tenant:
             tenant = self.tenant.name
         else:
             tenant = None
         statuses = self.conn.get_device_statuses()
         status = "Offline"
-        for dev in self.conn.get_org_devices():
+        for dev in self.device_map.values():
             if dev.get("name"):
                 if dev["name"] in statuses:
                     if statuses[dev["name"]] == "online":
