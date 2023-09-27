@@ -17,7 +17,7 @@ def load_json(path):
         return json.loads(file.read())
 
 
-SITE_FIXTURE = []
+GET_ORG_NETWORKS_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_networks.json")
 
 
 class TestMerakiAdapterTestCase(TransactionTestCase):
@@ -28,7 +28,7 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
     def setUp(self):
         """Initialize test case."""
         self.meraki_client = MagicMock()
-        self.meraki_client.get_sites.return_value = SITE_FIXTURE
+        self.meraki_client.get_org_networks.return_value = GET_ORG_NETWORKS_FIXTURE
 
         self.job = MerakiDataSource()
         self.job.job_result = JobResult.objects.create(
@@ -38,8 +38,9 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
 
     def test_data_loading(self):
         """Test Nautobot SSoT for Meraki load() function."""
-        # self.meraki.load()
-        # self.assertEqual(
-        #     {site["name"] for site in SITE_FIXTURE},
-        #     {site.get_unique_id() for site in self.meraki.get_all("site")},
-        # )
+        self.meraki_client.validate_organization_exists.return_value = True
+        self.meraki.load()
+        self.assertEqual(
+            {net["name"] for net in GET_ORG_NETWORKS_FIXTURE},
+            {net.get_unique_id() for net in self.meraki.get_all("network")},
+        )
