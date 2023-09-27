@@ -63,6 +63,9 @@ class NautobotAdapter(DiffSync):
                     uuid=dev.id,
                     version=dev._custom_field_data["os_version"] if dev._custom_field_data.get("os_version") else "",
                 )
+                if dev.notes:
+                    note = dev.notes.first()
+                    new_dev.notes = note.note
                 self.add(new_dev)
 
     def load(self):
