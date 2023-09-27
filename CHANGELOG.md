@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!--next-version-placeholder-->
 
+## v0.3.0 (2023-09-27)
+
+### Feature
+
+* ✨ Add CRUD functions for creating Devices in Nautobot ([`62d7073`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/62d707329d321b4572fac38939c0b218046c99fc))
+* ✨ Add load_devices function to Nautobot adapter. ([`a92e6df`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/a92e6df277bc99ac10c17181adbcdea5cd1ffcbb))
+* ✨ Add version attribute to Device DiffSync model. ([`990ca14`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/990ca140fe0d8adb2cdacb33387e689326ca0382))
+* ✨ Add OS Version CustomField to be created in database ready signal. ([`e02facd`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/e02facdb0ca9ef7b400f17e540dfc2e166c957d8))
+* ✨ Add load_devices function to Meraki adapter. ([`95eb967`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/95eb967e9694e52b6fcca0a7af16e3e6bd4465b2))
+* ✨ Add notes attribute to Device DiffSync model. ([`60eae11`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/60eae1161b501c918f1c3bdb2681e861bce60691))
+* ✨ Add function to parse hostname for device role ([`25a23e1`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/25a23e17dd520d9eb7198fe0b158f6910d24b572))
+
+### Fix
+
+* ✅ Update test fixture to match correct expected setup for map. ([`26bac8d`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/26bac8d2ef4cc66d5a342867c3f49344d5090e0a))
+* 🐛 Ensure latest note loaded into device DiffSync model. ([`509d3c3`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/509d3c3a59d87099ed0267c257f267ff83799515))
+* 🐛 Update device load to ignore Devices without hostname and log warning if found. ([`0e2bf1f`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/0e2bf1fb6981990f067f39737a4fe10d1313ca7a))
+* 🐛 Specify Site model for updating tags ([`e22ad20`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/e22ad20f16f65b95396cfb83745ac8765a283169))
+
 ## v0.2.0 (2023-09-27)
 
 ### Feature
