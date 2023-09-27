@@ -126,7 +126,7 @@ class NautobotDevice(Device):
 
     def delete(self):
         """Delete Device in Nautobot from NautobotDevice object."""
-        dev = Device.objects.get(id=self.uuid)
+        dev = NewDevice.objects.get(id=self.uuid)
         super().delete()
         dev.delete()
         return self
