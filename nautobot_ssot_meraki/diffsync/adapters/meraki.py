@@ -58,26 +58,29 @@ class MerakiAdapter(DiffSync):
         statuses = self.conn.get_device_statuses()
         status = "Offline"
         for dev in self.conn.get_org_devices():
-            if dev["name"] in statuses:
-                if statuses[dev["name"]]["status"] == "online":
-                    status = "Active"
-            try:
-                self.get(self.device, dev["name"])
-                self.job.log_warning(message=f"Duplicate device {dev['name']} found and being skipped.")
-            except ObjectNotFound:
-                new_dev = self.device(
-                    name=dev["name"],
-                    notes=dev["notes"],
-                    serial=dev["serial"],
-                    status=status,
-                    role=parse_hostname_for_role(dev_hostname=dev["name"]),
-                    model=dev["model"],
-                    network=self.conn.network_map[dev["networkId"]]["name"],
-                    tenant=tenant,
-                    uuid=None,
-                    version=dev["firmware"],
-                )
-                self.add(new_dev)
+            if dev.get("name"):
+                if dev["name"] in statuses:
+                    if statuses[dev["name"]] == "online":
+                        status = "Active"
+                try:
+                    self.get(self.device, dev["name"])
+                    self.job.log_warning(message=f"Duplicate device {dev['name']} found and being skipped.")
+                except ObjectNotFound:
+                    new_dev = self.device(
+                        name=dev["name"],
+                        notes=dev["notes"],
+                        serial=dev["serial"],
+                        status=status,
+                        role=parse_hostname_for_role(dev_hostname=dev["name"]),
+                        model=dev["model"],
+                        network=self.conn.network_map[dev["networkId"]]["name"],
+                        tenant=tenant,
+                        uuid=None,
+                        version=dev["firmware"],
+                    )
+                    self.add(new_dev)
+            else:
+                self.job.log_warning(message=f"Device serial {dev['serial']} is missing hostname so will be skipped.")
 
     def load(self):
         """Load data from Meraki into DiffSync models."""
