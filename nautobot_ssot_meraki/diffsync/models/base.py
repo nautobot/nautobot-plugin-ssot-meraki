@@ -43,3 +43,21 @@ class Device(DiffSyncModel):
     version: Optional[str]
 
     uuid: Optional[UUID]
+
+
+class Port(DiffSyncModel):
+    """DiffSync model for Meraki device ports."""
+
+    _modelname = "port"
+    _identifiers = ("name", "device")
+    _attributes = ("primary", "enabled", "port_type", "port_status")
+    _children = {}
+
+    name: str
+    device: str
+    primary: bool
+    enabled: bool
+    port_type: str
+    port_status: str
+
+    uuid: Optional[UUID]
