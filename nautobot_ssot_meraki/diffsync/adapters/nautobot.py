@@ -2,8 +2,8 @@
 
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
-from nautobot.dcim.models import Device, Site
-from nautobot_ssot_meraki.diffsync.models.nautobot import NautobotDevice, NautobotNetwork
+from nautobot.dcim.models import Device, Interface, Site
+from nautobot_ssot_meraki.diffsync.models.nautobot import NautobotDevice, NautobotNetwork, NautobotPort
 from nautobot_ssot_meraki.utils.nautobot import get_tag_strings
 
 
@@ -12,8 +12,9 @@ class NautobotAdapter(DiffSync):
 
     network = NautobotNetwork
     device = NautobotDevice
+    port = NautobotPort
 
-    top_level = ["network", "device"]
+    top_level = ["network", "device", "port"]
 
     def __init__(self, *args, job=None, sync=None, **kwargs):
         """Initialize Nautobot.
@@ -68,7 +69,26 @@ class NautobotAdapter(DiffSync):
                     new_dev.notes = note.note
                 self.add(new_dev)
 
+    def load_ports(self):
+        """Load Port data from Nautobot into DiffSync model."""
+        for intf in Interface.objects.all():
+            try:
+                self.get(self.port, {"name": intf.name, "device": intf.device.name})
+            except ObjectNotFound:
+                new_port = self.port(
+                    name=intf.name,
+                    device=intf.device.name,
+                    management=intf.mgmt_only,
+                    enabled=intf.enabled,
+                    port_type=intf.type,
+                    port_status=intf.status.name,
+                    tagging=False if intf.mode == "access" else True,
+                    uuid=intf.id,
+                )
+                self.add(new_port)
+
     def load(self):
         """Load data from Nautobot into DiffSync models."""
         self.load_sites()
         self.load_devices()
+        self.load_ports()
