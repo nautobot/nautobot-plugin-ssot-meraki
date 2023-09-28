@@ -169,6 +169,25 @@ class DashboardClient:
             )
         return ports["interfaces"]
 
+    def get_switchport_statuses(self, serial: str) -> dict:
+        """Retrieve statuses for all switchports on specified Device.
+
+        Args:
+            serial (str): Serial of switch in question.
+
+        Returns:
+            dict: Map of switch ports and associated information.
+        """
+        port_statuses = {}
+        try:
+            result = self.conn.switch.getDeviceSwitchPortsStatuses(serial=serial)
+            port_statuses = {port["portId"]: port for port in result}
+        except meraki.APIError as err:
+            self.logger.log_failure(
+                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            )
+        return port_statuses
+
 
 def parse_hostname_for_role(dev_hostname: str) -> str:
     """Parse device hostname to get Device Role.
