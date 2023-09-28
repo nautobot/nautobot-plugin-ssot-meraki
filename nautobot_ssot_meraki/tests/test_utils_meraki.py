@@ -41,3 +41,29 @@ class TestDashboardClient(TestCase):
 
         with self.assertRaises(meraki.APIError):
             DashboardClient(logger, org_id, token)
+
+    def test_validate_organization_exists_success_response(self):
+        """Test the validate_organization_exists() response is true if org ID found."""
+        logger = MagicMock()
+        org_id = "123456789"
+        token = "your_api_token"  # nosec: B105
+        dashboard_client = DashboardClient(logger, org_id, token)
+        dashboard_client.conn.organizations.getOrganizations = MagicMock()
+        dashboard_client.conn.organizations.getOrganizations.return_value = [{"id": "123456789"}, {"id": "987654321"}]
+
+        organization_exists = dashboard_client.validate_organization_exists()
+
+        self.assertTrue(organization_exists)
+
+    def test_validate_organization_exists_failure_response(self):
+        """Test the validate_organization_exists() response is false if wrong org ID."""
+        logger = MagicMock()
+        org_id = "123456789"
+        token = "your_api_token"  # nosec: B105
+        dashboard_client = DashboardClient(logger, org_id, token)
+        dashboard_client.conn.organizations.getOrganizations = MagicMock()
+        dashboard_client.conn.organizations.getOrganizations.return_value = [{"id": "987654321"}]
+
+        organization_exists = dashboard_client.validate_organization_exists()
+
+        self.assertFalse(organization_exists)
