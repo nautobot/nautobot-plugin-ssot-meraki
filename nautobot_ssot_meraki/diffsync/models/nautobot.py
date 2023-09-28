@@ -1,10 +1,10 @@
 """Nautobot DiffSync models for Meraki SSoT."""
 from django.contrib.contenttypes.models import ContentType
 from nautobot.dcim.models import Device as NewDevice
-from nautobot.dcim.models import Manufacturer, Site, DeviceRole, DeviceType
+from nautobot.dcim.models import Manufacturer, Site, DeviceRole, DeviceType, Interface
 from nautobot.extras.models import Note, Status
 from nautobot.tenancy.models import Tenant
-from nautobot_ssot_meraki.diffsync.models.base import Device, Network
+from nautobot_ssot_meraki.diffsync.models.base import Device, Network, Port
 
 
 class NautobotNetwork(Network):
@@ -129,4 +129,46 @@ class NautobotDevice(Device):
         dev = NewDevice.objects.get(id=self.uuid)
         super().delete()
         dev.delete()
+        return self
+
+
+class NautobotPort(Port):
+    """Nautobot implementation of Meraki Port model."""
+
+    @classmethod
+    def create(cls, diffsync, ids, attrs):
+        """Create Interface in Nautobot from NautobotDevice object."""
+        new_port = Interface.objects.create(
+            name=ids["name"],
+            device=NewDevice.objects.get(name=ids["device"]),
+            enabled=attrs["enabled"],
+            mode="access" if not attrs["tagging"] else "tagged",
+            mgmt_only=attrs["management"],
+            type=attrs["port_type"],
+            status=Status.objects.get(name=attrs["port_status"]),
+        )
+        new_port.validated_save()
+        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+
+    def update(self, attrs):
+        """Update Interface in Nautobot from NautobotDevice object."""
+        port = Interface.objects.get(id=self.uuid)
+        if "enabled" in attrs:
+            port.enabled = attrs["enabled"]
+        if "tagging" in attrs:
+            port.mode = "access" if not attrs["tagging"] else "tagged"
+        if "management" in attrs:
+            port.mgmt_only = attrs["management"]
+        if "port_type" in attrs:
+            port.type = attrs["port_type"]
+        if "port_status" in attrs:
+            port.status = Status.objects.get(name=attrs["port_status"])
+        port.validated_save()
+        return super().update(attrs)
+
+    def delete(self):
+        """Delete Interface in Nautobot from NautobotDevice object."""
+        port = Interface.objects.get(id=self.uuid)
+        super().delete()
+        port.delete()
         return self
