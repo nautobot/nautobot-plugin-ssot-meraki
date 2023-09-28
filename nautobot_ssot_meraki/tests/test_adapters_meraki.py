@@ -22,6 +22,10 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.meraki_client.network_map = fix.NETWORK_MAP_FIXTURE
         self.meraki_client.get_org_devices.return_value = fix.GET_ORG_DEVICES_FIXTURE
         self.meraki_client.get_device_statuses.return_value = fix.GET_DEVICE_STATUSES_FIXTURE
+        self.meraki_client.get_management_port_names.return_value = fix.GET_MANAGEMENT_PORT_NAMES_RECV_FIXTURE
+        self.meraki_client.get_uplink_settings.return_value = fix.GET_UPLINK_SETTINGS_RECV
+        self.meraki_client.get_switchport_statuses.return_value = fix.GET_SWITCHPORT_STATUSES
+        self.meraki_client.get_org_uplink_statuses.return_value = fix.GET_ORG_UPLINK_STATUSES_RECV_FIXTURE
 
         self.job = MerakiDataSource()
         self.job.job_result = JobResult.objects.create(
@@ -41,3 +45,7 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
             {dev["name"] for dev in fix.GET_ORG_DEVICES_FIXTURE},
             {dev.get_unique_id() for dev in self.meraki.get_all("device")},
         )
+        wan1_ports = [f"wan1__{dev['name']}" for dev in fix.GET_ORG_DEVICES_FIXTURE]
+        wan2_ports = [f"wan2__{dev['name']}" for dev in fix.GET_ORG_DEVICES_FIXTURE]
+        expected_ports = set(wan1_ports + wan2_ports)
+        self.assertEqual(expected_ports, {port.get_unique_id() for port in self.meraki.get_all("port")})
