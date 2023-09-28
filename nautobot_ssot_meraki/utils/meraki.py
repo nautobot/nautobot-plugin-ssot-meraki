@@ -98,6 +98,22 @@ class DashboardClient:
             )
         return settings_map
 
+    def get_org_switchports(self) -> dict:
+        """Retrieve all ports for switches in specified organization ID.
+
+        Returns:
+            dict: Map of Device serial to switchport information for specified organization ID.
+        """
+        port_map = {}
+        try:
+            result = self.conn.switch.getOrganizationSwitchPortsBySwitch(organizationId=self.org_id)
+            port_map = {switch["serial"]: switch for switch in result}
+        except meraki.APIError as err:
+            self.logger.log_failure(
+                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            )
+        return port_map
+
     def get_device_statuses(self) -> dict:
         """Retrieve device statuses from Meraki dashboard.
 
