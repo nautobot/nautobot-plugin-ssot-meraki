@@ -97,8 +97,8 @@ class MerakiAdapter(DiffSync):
                 self.get(self.port, {"name": port, "device": device_name})
             except ObjectNotFound:
                 uplink_status = "Planned"
-                if self.device_map[device_name]["networkId"] in uplink_statuses:
-                    uplinks = uplink_statuses[self.device_map[device_name]["networkId"]]["uplinks"]
+                if self.device_map[device_name]["serial"] in uplink_statuses:
+                    uplinks = uplink_statuses[self.device_map[device_name]["serial"]]["uplinks"]
                     for link in uplinks:
                         if link["interface"] == port and link["status"] == "active":
                             uplink_status = "Active"

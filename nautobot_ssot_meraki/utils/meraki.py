@@ -83,20 +83,20 @@ class DashboardClient:
         return devices
 
     def get_org_uplink_statuses(self) -> dict:
-        """Retrieve all appliance uplink statuses for specified Organization ID.
+        """Retrieve appliance uplink statuses for MX, MG, and Z devices for specified Organization ID.
 
         Returns:
-            dict: Map of network IDs to uplink settings for those devices in specified organization ID.
+            dict: Map of Device serial to uplink settings for those MX, MG, and Z devices in specified organization ID.
         """
-        settings = {}
+        settings_map = {}
         try:
             result = self.conn.organizations.getOrganizationUplinksStatuses(organizationId=self.org_id)
-            settings = {net["networkId"]: net for net in result}
+            settings_map = {net["serial"]: net for net in result}
         except meraki.APIError as err:
             self.logger.log_failure(
                 message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
-        return settings
+        return settings_map
 
     def get_device_statuses(self) -> dict:
         """Retrieve device statuses from Meraki dashboard.
