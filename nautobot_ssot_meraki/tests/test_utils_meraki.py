@@ -3,6 +3,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch
 import meraki
 from nautobot_ssot_meraki.utils.meraki import DashboardClient
+from nautobot_ssot_meraki.tests.fixtures import fixtures as fix
 
 
 class TestDashboardClient(TestCase):
@@ -67,3 +68,17 @@ class TestDashboardClient(TestCase):
         organization_exists = dashboard_client.validate_organization_exists()
 
         self.assertFalse(organization_exists)
+
+    def test_get_org_networks(self):
+        """Test the get_org_networks() response is as expected."""
+        logger = MagicMock()
+        org_id = "123456789"
+        token = "your_api_token"  # nosec: B105
+        client = DashboardClient(logger, org_id, token)
+        client.conn.organizations.getOrganizationNetworks = MagicMock()
+        client.conn.organizations.getOrganizationNetworks.return_value = fix.GET_ORG_NETWORKS_SENT_FIXTURE
+
+        actual = client.get_org_networks()
+        expected = fix.GET_ORG_NETWORKS_SENT_FIXTURE
+        self.assertEqual(actual, expected)
+        self.assertEqual(client.network_map, fix.GET_ORG_NETWORKS_RECV_FIXTURE)
