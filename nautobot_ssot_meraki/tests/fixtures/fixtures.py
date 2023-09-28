@@ -20,5 +20,5 @@ GET_ORG_SWITCHPORTS_SENT_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtu
 GET_ORG_UPLINK_STATUSES_SENT_FIXTURE = load_json(
     "./nautobot_ssot_meraki/tests/fixtures/get_org_uplink_statuses_sent.json"
 )
-GET_SWITCH_PORT_STATUSES = load_json("./nautobot_ssot_meraki/tests/fixtures/get_switchport_statuses.json")
+GET_SWITCHPORT_STATUSES = load_json("./nautobot_ssot_meraki/tests/fixtures/get_switchport_statuses.json")
 GET_UPLINK_SETTINGS = load_json("./nautobot_ssot_meraki/tests/fixtures/get_uplink_settings.json")
