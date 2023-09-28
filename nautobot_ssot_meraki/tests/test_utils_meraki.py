@@ -82,3 +82,16 @@ class TestDashboardClient(TestCase):
         expected = fix.GET_ORG_NETWORKS_SENT_FIXTURE
         self.assertEqual(actual, expected)
         self.assertEqual(client.network_map, fix.GET_ORG_NETWORKS_RECV_FIXTURE)
+
+    def test_get_org_devices(self):
+        """Test the get_org_devices() response is as expected."""
+        logger = MagicMock()
+        org_id = "123456789"
+        token = "your_api_token"  # nosec: B105
+        client = DashboardClient(logger, org_id, token)
+        client.conn.organizations.getOrganizationDevices = MagicMock()
+        client.conn.organizations.getOrganizationDevices.return_value = fix.GET_ORG_DEVICES_FIXTURE
+
+        actual = client.get_org_devices()
+        expected = fix.GET_ORG_DEVICES_FIXTURE
+        self.assertEqual(actual, expected)
