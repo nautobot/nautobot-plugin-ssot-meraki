@@ -18,7 +18,7 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
     def setUp(self):
         """Initialize test case."""
         self.meraki_client = MagicMock()
-        self.meraki_client.get_org_networks.return_value = fix.GET_ORG_NETWORKS_FIXTURE
+        self.meraki_client.get_org_networks.return_value = fix.GET_ORG_NETWORKS_SENT_FIXTURE
         self.meraki_client.network_map = fix.NETWORK_MAP_FIXTURE
         self.meraki_client.get_org_devices.return_value = fix.GET_ORG_DEVICES_FIXTURE
         self.meraki_client.get_device_statuses.return_value = fix.GET_DEVICE_STATUSES_FIXTURE
@@ -34,7 +34,7 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.meraki_client.validate_organization_exists.return_value = True
         self.meraki.load()
         self.assertEqual(
-            {net["name"] for net in fix.GET_ORG_NETWORKS_FIXTURE},
+            {net["name"] for net in fix.GET_ORG_NETWORKS_SENT_FIXTURE},
             {net.get_unique_id() for net in self.meraki.get_all("network")},
         )
         self.assertEqual(
