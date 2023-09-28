@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from nautobot.dcim.models import Device, DeviceType, DeviceRole, Manufacturer, Site
+from nautobot.dcim.models import Device, DeviceType, DeviceRole, Interface, Manufacturer, Site
 from nautobot.extras.models import Job, JobResult, Note, Status
 from nautobot.utilities.testing import TransactionTestCase
 
@@ -71,6 +71,17 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         )
         lab01.validated_save()
 
+        lab01_mgmt = Interface.objects.create(
+            name="wan1",
+            device=lab01,
+            enabled=True,
+            mode="access",
+            mgmt_only=True,
+            type="1000base-t",
+            status=self.status_active,
+        )
+        lab01_mgmt.validated_save()
+
     def test_data_loading(self):
         """Test the load() function."""
         self.nb_adapter.load()
@@ -82,3 +93,4 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
             {dev.name for dev in Device.objects.all()},
             {dev.get_unique_id() for dev in self.nb_adapter.get_all("device")},
         )
+        self.assertEqual({"wan1__Lab01"}, {port.get_unique_id() for port in self.nb_adapter.get_all("port")})
