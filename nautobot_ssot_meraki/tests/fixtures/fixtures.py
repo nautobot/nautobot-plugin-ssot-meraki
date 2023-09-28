@@ -8,7 +8,8 @@ def load_json(path):
         return json.loads(file.read())
 
 
-GET_ORG_NETWORKS_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_networks.json")
+GET_ORG_NETWORKS_SENT_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_networks_sent.json")
+GET_ORG_NETWORKS_RECV_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_networks_recv.json")
 NETWORK_MAP_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/network_map.json")
 GET_ORG_DEVICES_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_devices.json")
 GET_DEVICE_STATUSES_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_device_statuses.json")
