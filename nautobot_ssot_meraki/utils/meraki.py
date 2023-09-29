@@ -170,10 +170,10 @@ class DashboardClient:
         return ports["interfaces"]
 
     def get_switchport_statuses(self, serial: str) -> dict:
-        """Retrieve statuses for all switchports on specified Device.
+        """Retrieve statuses for all switchports on specified MS Device.
 
         Args:
-            serial (str): Serial of switch in question.
+            serial (str): Serial of MS device in question.
 
         Returns:
             dict: Map of switch ports and associated information.
