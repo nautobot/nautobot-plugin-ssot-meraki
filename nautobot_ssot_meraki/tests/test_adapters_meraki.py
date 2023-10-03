@@ -50,12 +50,12 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         wan1_ports = [
             f"wan1__{dev['name']}"
             for dev in fix.GET_ORG_DEVICES_FIXTURE
-            if dev["model"].startswith(("MX", "MG", "MS", "Z"))
+            if dev["model"].startswith(("MX", "MG", "MR", "MS", "Z"))
         ]
         wan2_ports = [
             f"wan2__{dev['name']}"
             for dev in fix.GET_ORG_DEVICES_FIXTURE
-            if dev["model"].startswith(("MX", "MG", "MS", "Z"))
+            if dev["model"].startswith(("MX", "MG", "MR", "MS", "Z"))
         ]
         lan_ports = []
         for port in fix.GET_APPLIANCE_SWITCHPORTS_FIXTURE:
