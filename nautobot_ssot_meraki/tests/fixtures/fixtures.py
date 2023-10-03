@@ -29,3 +29,4 @@ GET_ORG_UPLINK_STATUSES_RECV_FIXTURE = load_json(
 GET_SWITCHPORT_STATUSES = load_json("./nautobot_ssot_meraki/tests/fixtures/get_switchport_statuses.json")
 GET_UPLINK_SETTINGS_SENT = load_json("./nautobot_ssot_meraki/tests/fixtures/get_uplink_settings_sent.json")
 GET_UPLINK_SETTINGS_RECV = load_json("./nautobot_ssot_meraki/tests/fixtures/get_uplink_settings_recv.json")
+GET_APPLIANCE_SWITCHPORTS_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_appliance_switchports.json")
