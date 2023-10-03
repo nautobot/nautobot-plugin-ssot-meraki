@@ -1,6 +1,6 @@
 """Nautobot SSoT for Meraki DiffSync models for Nautobot SSoT for Meraki SSoT."""
 
-from nautobot_ssot_meraki.diffsync.models.base import Device, Network, Port
+from nautobot_ssot_meraki.diffsync.models.base import Device, Network, Port, IPAddress
 
 
 class MerakiNetwork(Network):
@@ -51,4 +51,21 @@ class MerakiPort(Port):
 
     def delete(self):
         """Delete Port in Meraki from MerakiPort object."""
+        return self
+
+
+class MerakiIPAddress(IPAddress):
+    """Meraki implementation of IPAddress DiffSync model."""
+
+    @classmethod
+    def create(cls, diffsync, ids, attrs):
+        """Create IPAddress in Meraki from MerakiIPAddress object."""
+        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+
+    def update(self, attrs):
+        """Update IPAddress in Meraki from MerakiIPAddress object."""
+        return super().update(attrs)
+
+    def delete(self):
+        """Delete IPAddress in Meraki from MerakiIPAddress object."""
         return self
