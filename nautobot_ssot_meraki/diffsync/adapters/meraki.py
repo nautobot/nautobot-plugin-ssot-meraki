@@ -89,6 +89,8 @@ class MerakiAdapter(DiffSync):
                         )
                     if dev["model"].startswith("MS"):
                         self.load_switch_ports(device_name=dev["name"], serial=dev["serial"])
+                    if dev["model"].startswith("MR"):
+                        self.load_ap_ports(device_name=dev["name"], serial=dev["serial"])
             else:
                 self.job.log_warning(message=f"Device serial {dev['serial']} is missing hostname so will be skipped.")
 
@@ -165,6 +167,26 @@ class MerakiAdapter(DiffSync):
                     port_type="1000base-t",
                     port_status="Active",
                     tagging=True if port["type"] == "trunk" else False,
+                    uuid=None,
+                )
+                self.add(new_port)
+
+    def load_ap_ports(self, device_name: str, serial: str):
+        """Load ports of a MR device from Meraki dashboard into DiffSync models."""
+        mgmt_port_names = self.conn.get_management_port_names(serial=serial)
+
+        for port in mgmt_port_names:
+            try:
+                self.get(self.port, {"name": port, "device": device_name})
+            except ObjectNotFound:
+                new_port = self.port(
+                    name=port,
+                    device=device_name,
+                    management=True,
+                    enabled=True,
+                    port_type="1000base-t",
+                    port_status="Active",
+                    tagging=False,
                     uuid=None,
                 )
                 self.add(new_port)
