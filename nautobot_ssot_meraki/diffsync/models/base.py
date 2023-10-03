@@ -62,3 +62,21 @@ class Port(DiffSyncModel):
     tagging: bool
 
     uuid: Optional[UUID]
+
+
+class IPAddress(DiffSyncModel):
+    """DiffSync model for Meraki IP Addresses."""
+
+    _modelname = "ipaddress"
+    _identifiers = ("address", "location")
+    _attributes = ("device", "port", "prefix", "primary")
+    _children = {}
+
+    address: str
+    device: str
+    location: str
+    port: str
+    prefix: str
+    primary: bool
+
+    uuid: Optional[UUID]
