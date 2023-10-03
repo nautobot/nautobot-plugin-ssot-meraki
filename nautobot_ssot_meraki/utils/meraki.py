@@ -188,6 +188,24 @@ class DashboardClient:
             )
         return port_statuses
 
+    def get_appliance_switchports(self, network_id: str) -> list:
+        """Retrieve switchports for MX devices in specified network ID.
+
+        Args:
+            network_id (str): Network ID that MX device belongs to.
+
+        Returns:
+            list: List of switchports for network that MX device belongs to.
+        """
+        ports = []
+        try:
+            ports = self.conn.appliance.getNetworkAppliancePorts(networkId=network_id)
+        except meraki.APIError as err:
+            self.logger.log_failure(
+                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            )
+        return ports
+
 
 def parse_hostname_for_role(dev_hostname: str) -> str:
     """Parse device hostname to get Device Role.
