@@ -96,11 +96,11 @@ class MerakiAdapter(DiffSync):
 
     def load_firewall_ports(self, device_name: str, serial: str, network_id: str):
         """Load ports of a firewall, cellular, or teleworker device from Meraki dashboard into DiffSync models."""
-        mgmt_port_names = self.conn.get_management_port_names(serial=serial)
+        mgmt_ports = self.conn.get_management_ports(serial=serial)
         uplink_settings = self.conn.get_uplink_settings(serial=serial)
         lan_ports = self.conn.get_appliance_switchports(network_id=network_id)
 
-        for port in mgmt_port_names:
+        for port in mgmt_ports.keys():
             try:
                 self.get(self.port, {"name": port, "device": device_name})
             except ObjectNotFound:
@@ -139,10 +139,10 @@ class MerakiAdapter(DiffSync):
 
     def load_switch_ports(self, device_name: str, serial: str):
         """Load ports of a switch device from Meraki dashboard into DiffSync models."""
-        mgmt_port_names = self.conn.get_management_port_names(serial=serial)
+        mgmt_ports = self.conn.get_management_ports(serial=serial)
         org_switchports = self.conn.get_org_switchports()
 
-        for port in mgmt_port_names:
+        for port in mgmt_ports.keys():
             try:
                 self.get(self.port, {"name": port, "device": device_name})
             except ObjectNotFound:
@@ -173,9 +173,9 @@ class MerakiAdapter(DiffSync):
 
     def load_ap_ports(self, device_name: str, serial: str):
         """Load ports of a MR device from Meraki dashboard into DiffSync models."""
-        mgmt_port_names = self.conn.get_management_port_names(serial=serial)
+        mgmt_ports = self.conn.get_management_ports(serial=serial)
 
-        for port in mgmt_port_names:
+        for port in mgmt_ports.keys():
             try:
                 self.get(self.port, {"name": port, "device": device_name})
             except ObjectNotFound:
