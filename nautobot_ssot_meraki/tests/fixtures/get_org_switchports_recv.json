@@ -1,5 +1,5 @@
-[
-    {
+{
+    "N0BA-AWBF-DCWP": {
         "name": "Lab Switch",
         "serial": "N0BA-AWBF-DCWP",
         "mac": "66:76:4h:6p:4p:tw",
@@ -461,4 +461,4 @@
             }
         ]
     }
-]
+}
