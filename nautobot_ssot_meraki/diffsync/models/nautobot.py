@@ -3,8 +3,10 @@ from django.contrib.contenttypes.models import ContentType
 from nautobot.dcim.models import Device as NewDevice
 from nautobot.dcim.models import Manufacturer, Site, DeviceRole, DeviceType, Interface
 from nautobot.extras.models import Note, Status
+from nautobot.ipam.models import IPAddress as OrmIPAddress
+from nautobot.ipam.models import Prefix as OrmPrefix
 from nautobot.tenancy.models import Tenant
-from nautobot_ssot_meraki.diffsync.models.base import Device, Network, Port
+from nautobot_ssot_meraki.diffsync.models.base import Device, Network, Port, IPAddress
 
 
 class NautobotNetwork(Network):
@@ -171,4 +173,65 @@ class NautobotPort(Port):
         port = Interface.objects.get(id=self.uuid)
         super().delete()
         port.delete()
+        return self
+
+
+class NautobotIPAddress(IPAddress):
+    """Nautobot implementation of Meraki Port model."""
+
+    @classmethod
+    def create(cls, diffsync, ids, attrs):
+        """Create IPAddress in Nautobot from NautobotIPAddress object."""
+        status_active = Status.objects.get(name="Active")
+        OrmPrefix.objects.get_or_create(
+            prefix=attrs["prefix"], site=Site.objects.get(name=ids["location"], status=status_active)
+        )
+        new_ip = OrmIPAddress.objects.create(
+            address=ids["address"],
+            status=status_active,
+        )
+        new_ip.validated_save()
+        if attrs.get("device") and attrs.get("port"):
+            dev = NewDevice.objects.get(name=attrs["device"])
+            intf = Interface.objects.get(name=attrs["port"], device=dev)
+            new_ip.assigned_object_type = ContentType.objects.get_for_model(Interface)
+            new_ip.assigned_object_id = intf.id
+            intf.validated_save()
+
+            if attrs.get("primary"):
+                if new_ip.family == 4:
+                    dev.primary_ip4 = new_ip
+                else:
+                    dev.primary_ip6 = new_ip
+            dev.validated_save()
+        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+
+    def update(self, attrs):
+        """Update IPAddress in Nautobot from NautobotIPAddress object."""
+        ip = OrmIPAddress.objects.get(id=self.uuid)
+        if "port" in attrs and "device" not in attrs:
+            intf = Interface.objects.get(name=attrs["port"], device=NewDevice.objects.get(name=self.device))
+            intf.assigned_object_id = ip.id
+            intf.validated_save()
+        if "device" in attrs:
+            dev = NewDevice.objects.get(name=attrs["device"])
+            if attrs.get("port"):
+                intf = Interface.objects.get(name=attrs["port"], device=dev)
+                intf.assigned_object_id = ip.id
+                intf.validated_save()
+        if "primary" in attrs:
+            dev = ip.assigned_object.device
+            if ip.family == 4:
+                dev.primary_ip4 = ip
+            else:
+                dev.primary_ip6 = ip
+            dev.validated_save()
+        ip.validated_save()
+        return super().update(attrs)
+
+    def delete(self):
+        """Delete IPAddress in Nautobot from NautobotIPAddress object."""
+        ip = OrmIPAddress.objects.get(id=self.uuid)
+        super().delete()
+        ip.delete()
         return self
