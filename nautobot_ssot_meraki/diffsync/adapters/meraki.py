@@ -29,6 +29,7 @@ class MerakiAdapter(DiffSync):
         self.conn = client
         self.tenant = tenant
         self.device_map = {}
+        self.org_uplink_statuses = self.conn.get_org_uplink_statuses()
 
     def load_networks(self):
         """Load networks from Meraki dashboard into DiffSync models."""
@@ -82,23 +83,26 @@ class MerakiAdapter(DiffSync):
                         version=dev["firmware"],
                     )
                     self.add(new_dev)
-                    self.load_management_port(device_name=dev["name"], serial=dev["serial"])
+                    if dev["model"].startswith(("MX", "MG", "Z")):
+                        self.load_firewall_ports(
+                            device_name=dev["name"], serial=dev["serial"], network_id=dev["networkId"]
+                        )
             else:
                 self.job.log_warning(message=f"Device serial {dev['serial']} is missing hostname so will be skipped.")
 
-    def load_management_port(self, device_name: str, serial: str):
-        """Load management port of a device from Meraki dashboard into DiffSync models."""
+    def load_firewall_ports(self, device_name: str, serial: str, network_id: str):
+        """Load ports of a firewall, cellular, or teleworker device from Meraki dashboard into DiffSync models."""
         mgmt_port_names = self.conn.get_management_port_names(serial=serial)
         uplink_settings = self.conn.get_uplink_settings(serial=serial)
-        uplink_statuses = self.conn.get_org_uplink_statuses()
+        lan_ports = self.conn.get_appliance_switchports(network_id=network_id)
 
         for port in mgmt_port_names:
             try:
                 self.get(self.port, {"name": port, "device": device_name})
             except ObjectNotFound:
                 uplink_status = "Planned"
-                if self.device_map[device_name]["serial"] in uplink_statuses:
-                    uplinks = uplink_statuses[self.device_map[device_name]["serial"]]["uplinks"]
+                if serial in self.org_uplink_statuses:
+                    uplinks = self.org_uplink_statuses[serial]["uplinks"]
                     for link in uplinks:
                         if link["interface"] == port and link["status"] == "active":
                             uplink_status = "Active"
@@ -110,6 +114,21 @@ class MerakiAdapter(DiffSync):
                     port_type="1000base-t",
                     port_status=uplink_status,
                     tagging=uplink_settings[port]["vlanTagging"]["enabled"],
+                    uuid=None,
+                )
+                self.add(new_port)
+        for port in lan_ports:
+            try:
+                self.get(self.port, {"name": port["number"], "device": device_name})
+            except ObjectNotFound:
+                new_port = self.port(
+                    name=port["number"],
+                    device=device_name,
+                    management=False,
+                    enabled=port["enabled"],
+                    port_type="1000base-t",
+                    port_status="Active",
+                    tagging=bool(port["type"] == "trunk"),
                     uuid=None,
                 )
                 self.add(new_port)
