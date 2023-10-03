@@ -95,3 +95,15 @@ class TestDashboardClient(TestCase):
         actual = client.get_org_devices()
         expected = fix.GET_ORG_DEVICES_FIXTURE
         self.assertEqual(actual, expected)
+
+    def test_get_org_switchports(self):
+        logger = MagicMock()
+        org_id = "123456789"
+        token = "your_api_token"  # nosec: B105
+        client = DashboardClient(logger, org_id, token)
+        client.conn.switch.getOrganizationSwitchPortsBySwitch = MagicMock()
+        client.conn.switch.getOrganizationSwitchPortsBySwitch.return_value = fix.GET_ORG_SWITCHPORTS_SENT_FIXTURE
+
+        actual = client.get_org_switchports()
+        expected = fix.GET_ORG_SWITCHPORTS_RECV_FIXTURE
+        self.assertEqual(actual, expected)

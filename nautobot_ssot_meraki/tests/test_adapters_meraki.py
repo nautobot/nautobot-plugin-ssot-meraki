@@ -27,6 +27,7 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.meraki_client.get_switchport_statuses.return_value = fix.GET_SWITCHPORT_STATUSES
         self.meraki_client.get_org_uplink_statuses.return_value = fix.GET_ORG_UPLINK_STATUSES_RECV_FIXTURE
         self.meraki_client.get_appliance_switchports.return_value = fix.GET_APPLIANCE_SWITCHPORTS_FIXTURE
+        self.meraki_client.get_org_switchports.return_value = fix.GET_ORG_SWITCHPORTS_RECV_FIXTURE
 
         self.job = MerakiDataSource()
         self.job.job_result = JobResult.objects.create(
@@ -47,15 +48,22 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
             {dev.get_unique_id() for dev in self.meraki.get_all("device")},
         )
         wan1_ports = [
-            f"wan1__{dev['name']}" for dev in fix.GET_ORG_DEVICES_FIXTURE if dev["model"].startswith(("MX", "MG", "Z"))
+            f"wan1__{dev['name']}"
+            for dev in fix.GET_ORG_DEVICES_FIXTURE
+            if dev["model"].startswith(("MX", "MG", "MS", "Z"))
         ]
         wan2_ports = [
-            f"wan2__{dev['name']}" for dev in fix.GET_ORG_DEVICES_FIXTURE if dev["model"].startswith(("MX", "MG", "Z"))
+            f"wan2__{dev['name']}"
+            for dev in fix.GET_ORG_DEVICES_FIXTURE
+            if dev["model"].startswith(("MX", "MG", "MS", "Z"))
         ]
         lan_ports = []
         for port in fix.GET_APPLIANCE_SWITCHPORTS_FIXTURE:
             for dev in fix.GET_ORG_DEVICES_FIXTURE:
                 if dev["model"].startswith(("MX", "MG", "Z")):
                     lan_ports.append(f"{port['number']}__{dev['name']}")
+        for switch in fix.GET_ORG_SWITCHPORTS_SENT_FIXTURE:
+            for port in switch["ports"]:
+                lan_ports.append(f"{port['portId']}__Lab Switch")
         expected_ports = set(wan1_ports + wan2_ports + lan_ports)
         self.assertEqual(expected_ports, {port.get_unique_id() for port in self.meraki.get_all("port")})
