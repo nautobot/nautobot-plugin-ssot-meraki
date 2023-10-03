@@ -3,7 +3,14 @@
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
 from nautobot.dcim.models import Device, Interface, Site
-from nautobot_ssot_meraki.diffsync.models.nautobot import NautobotDevice, NautobotNetwork, NautobotPort
+from nautobot.ipam.models import IPAddress
+from netutils.ip import ipaddress_interface
+from nautobot_ssot_meraki.diffsync.models.nautobot import (
+    NautobotDevice,
+    NautobotNetwork,
+    NautobotPort,
+    NautobotIPAddress,
+)
 from nautobot_ssot_meraki.utils.nautobot import get_tag_strings
 
 
@@ -13,8 +20,9 @@ class NautobotAdapter(DiffSync):
     network = NautobotNetwork
     device = NautobotDevice
     port = NautobotPort
+    ipaddress = NautobotIPAddress
 
-    top_level = ["network", "device", "port"]
+    top_level = ["network", "device", "port", "ipaddress"]
 
     def __init__(self, *args, job=None, sync=None, **kwargs):
         """Initialize Nautobot.
@@ -87,8 +95,22 @@ class NautobotAdapter(DiffSync):
                 )
                 self.add(new_port)
 
+    def load_ipaddresses(self):
+        for ipaddr in IPAddress.objects.all():
+            new_ip = self.ipaddress(
+                address=str(ipaddr.address),
+                device=ipaddr.assigned_object.device.name if ipaddr.assigned_object else "",
+                location=ipaddr.assigned_object.device.site.name if ipaddr.assigned_object else "",
+                port=ipaddr.assigned_object.name if ipaddr.assigned_object else "",
+                prefix=ipaddress_interface(ip=str(ipaddr.addreess), attr="network.with_prefixlen"),
+                primary=True if getattr(ipaddr, "primary_ip_for") else False,
+                uuid=ipaddr.id,
+            )
+            self.add(new_ip)
+
     def load(self):
         """Load data from Nautobot into DiffSync models."""
         self.load_sites()
         self.load_devices()
         self.load_ports()
+        self.load_ipaddresses()

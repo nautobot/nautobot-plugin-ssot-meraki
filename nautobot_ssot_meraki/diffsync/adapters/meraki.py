@@ -1,7 +1,8 @@
 """Nautobot SSoT for Meraki Adapter for Meraki SSoT plugin."""
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
-from nautobot_ssot_meraki.diffsync.models.meraki import MerakiNetwork, MerakiDevice, MerakiPort
+from netutils.ip import ipaddress_interface, netmask_to_cidr
+from nautobot_ssot_meraki.diffsync.models.meraki import MerakiNetwork, MerakiDevice, MerakiPort, MerakiIPAddress
 from nautobot_ssot_meraki.utils.meraki import parse_hostname_for_role
 
 
@@ -11,8 +12,9 @@ class MerakiAdapter(DiffSync):
     network = MerakiNetwork
     device = MerakiDevice
     port = MerakiPort
+    ipaddress = MerakiIPAddress
 
-    top_level = ["network", "device", "port"]
+    top_level = ["network", "device", "port", "ipaddress"]
 
     def __init__(self, job, sync, client, tenant=None, *args, **kwargs):
         """Initialize Meraki.
@@ -121,6 +123,17 @@ class MerakiAdapter(DiffSync):
                     uuid=None,
                 )
                 self.add(new_port)
+                if uplink_settings[port]["svis"]["ipv4"]["assignmentMode"] == "static":
+                    port_svis = uplink_settings[port]["svis"]["ipv4"]
+                    prefix = ipaddress_interface(ip=port_svis["address"], attr="with_prefixlen")
+                    self.load_ipaddress(
+                        address=port_svis["address"],
+                        dev_name=device_name,
+                        location=self.conn.network_map[network_id]["name"],
+                        port=port,
+                        prefix=prefix,
+                        primary=True,
+                    )
         for port in lan_ports:
             try:
                 self.get(self.port, {"name": port["number"], "device": device_name})
@@ -157,6 +170,19 @@ class MerakiAdapter(DiffSync):
                     uuid=None,
                 )
                 self.add(mgmt_port)
+                if mgmt_ports[port].get("usingStaticIp"):
+                    prefix = ipaddress_interface(
+                        ip=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(netmask=mgmt_ports[port]['staticSubnetMask'])}",
+                        attr="with_prefixlen",
+                    )
+                    self.load_ipaddress(
+                        address=mgmt_ports[port]["staticIp"],
+                        dev_name=device_name,
+                        location=self.conn.network_map[self.device_map[device_name]["networkId"]]["name"],
+                        port=port,
+                        prefix=prefix,
+                        primary=True,
+                    )
         if serial in org_switchports:
             for port in org_switchports[serial]["ports"]:
                 new_port = self.port(
@@ -190,6 +216,35 @@ class MerakiAdapter(DiffSync):
                     uuid=None,
                 )
                 self.add(new_port)
+                if mgmt_ports[port].get("usingStaticIp"):
+                    prefix = ipaddress_interface(
+                        ip=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(netmask=mgmt_ports[port]['staticSubnetMask'])}",
+                        attr="with_prefixlen",
+                    )
+                    self.load_ipaddress(
+                        address=mgmt_ports[port]["staticIp"],
+                        dev_name=device_name,
+                        location=self.conn.network_map[self.device_map[device_name]["networkId"]]["name"],
+                        port=port,
+                        prefix=prefix,
+                        primary=True,
+                    )
+
+    def load_ipaddress(self, address: str, dev_name: str, location: str, port: str, prefix: str, primary: bool):
+        """Load IPAddresses of devices into DiffSync models."""
+        try:
+            self.get(self.ipaddress, {"address": address, "location": location})
+        except ObjectNotFound:
+            new_ip = self.ipaddress(
+                address=address,
+                location=location,
+                device=dev_name,
+                port=port,
+                prefix=prefix,
+                primary=primary,
+                uuid=None,
+            )
+            self.add(new_ip)
 
     def load(self):
         """Load data from Meraki into DiffSync models."""
