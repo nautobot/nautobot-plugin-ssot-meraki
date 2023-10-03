@@ -20,6 +20,7 @@ GET_MANAGEMENT_PORT_NAMES_SENT_FIXTURE = load_json(
     "./nautobot_ssot_meraki/tests/fixtures/get_management_port_names_sent.json"
 )
 GET_ORG_SWITCHPORTS_SENT_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_switchports_sent.json")
+GET_ORG_SWITCHPORTS_RECV_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_switchports_recv.json")
 GET_ORG_UPLINK_STATUSES_SENT_FIXTURE = load_json(
     "./nautobot_ssot_meraki/tests/fixtures/get_org_uplink_statuses_sent.json"
 )
