@@ -36,7 +36,7 @@ class DashboardClient:
             )
             return dashboard
         except meraki.APIError as err:
-            self.logger.log_warning(f"Unable to connect to Meraki dashboard: {err.message}")
+            self.logger.log_failure(f"Unable to connect to Meraki dashboard: {err.message}")
             raise err
 
     def validate_organization_exists(self) -> bool:
