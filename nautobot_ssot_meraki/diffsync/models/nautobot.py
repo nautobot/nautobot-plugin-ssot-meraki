@@ -1,7 +1,7 @@
 """Nautobot DiffSync models for Meraki SSoT."""
 from django.contrib.contenttypes.models import ContentType
 from nautobot.dcim.models import Device as NewDevice
-from nautobot.dcim.models import Manufacturer, Site, DeviceRole, DeviceType, Interface
+from nautobot.dcim.models import Manufacturer, Site, DeviceRole, DeviceType, Interface, Platform
 from nautobot.extras.models import Note, Status
 from nautobot.ipam.models import IPAddress as OrmIPAddress
 from nautobot.ipam.models import Prefix as OrmPrefix
@@ -69,6 +69,7 @@ class NautobotDevice(Device):
         cisco_manu = Manufacturer.objects.get_or_create(name="Cisco Meraki")[0]
         new_device = NewDevice(
             name=ids["name"],
+            platform=Platform.objects.get_or_create(name="Meraki", slug="meraki", network_driver="meraki")[0],
             serial=attrs["serial"],
             status=Status.objects.get_or_create(name=attrs["status"])[0],
             device_role=DeviceRole.objects.get_or_create(name=attrs["role"])[0],
