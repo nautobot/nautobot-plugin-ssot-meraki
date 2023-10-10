@@ -6,7 +6,7 @@ from nautobot.extras.models import Note, Status
 from nautobot.ipam.models import IPAddress as OrmIPAddress
 from nautobot.ipam.models import Prefix as OrmPrefix
 from nautobot.tenancy.models import Tenant
-from nautobot_ssot_meraki.diffsync.models.base import Device, Network, Port, IPAddress
+from nautobot_ssot_meraki.diffsync.models.base import Device, Network, Port, Prefix, IPAddress
 
 
 class NautobotNetwork(Network):
@@ -177,19 +177,35 @@ class NautobotPort(Port):
         return self
 
 
+class NautobotPrefix(Prefix):
+    """Nautobot implementation of Meraki Port model."""
+
+    @classmethod
+    def create(cls, diffsync, ids, attrs):
+        """Create Prefix in Nautobot from NautobotPrefix object."""
+        new_pf = OrmPrefix.objects.create(
+            prefix=ids["prefix"], site=Site.objects.get(name=ids["location"]), status=Status.objects.get(name="Active")
+        )
+        new_pf.validated_save()
+        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+
+    def delete(self):
+        """Delete Prefix in Nautobot from NautobotPrefix object."""
+        del_pf = OrmPrefix.objects.get(id=self.uuid)
+        super().delete()
+        del_pf.delete()
+        return self
+
+
 class NautobotIPAddress(IPAddress):
     """Nautobot implementation of Meraki Port model."""
 
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create IPAddress in Nautobot from NautobotIPAddress object."""
-        status_active = Status.objects.get(name="Active")
-        OrmPrefix.objects.get_or_create(
-            prefix=attrs["prefix"], site=Site.objects.get(name=ids["location"], status=status_active)
-        )
         new_ip = OrmIPAddress.objects.create(
             address=ids["address"],
-            status=status_active,
+            status=Status.objects.get(name="Active"),
         )
         new_ip.validated_save()
         if attrs.get("device") and attrs.get("port"):

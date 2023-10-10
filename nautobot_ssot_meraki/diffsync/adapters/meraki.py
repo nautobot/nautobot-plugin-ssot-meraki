@@ -2,7 +2,13 @@
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
 from netutils.ip import ipaddress_interface, netmask_to_cidr
-from nautobot_ssot_meraki.diffsync.models.meraki import MerakiNetwork, MerakiDevice, MerakiPort, MerakiIPAddress
+from nautobot_ssot_meraki.diffsync.models.meraki import (
+    MerakiNetwork,
+    MerakiDevice,
+    MerakiPort,
+    MerakiPrefix,
+    MerakiIPAddress,
+)
 from nautobot_ssot_meraki.utils.meraki import parse_hostname_for_role
 
 
@@ -12,9 +18,10 @@ class MerakiAdapter(DiffSync):
     network = MerakiNetwork
     device = MerakiDevice
     port = MerakiPort
+    prefix = MerakiPrefix
     ipaddress = MerakiIPAddress
 
-    top_level = ["network", "device", "port", "ipaddress"]
+    top_level = ["network", "device", "prefix", "ipaddress"]
 
     def __init__(self, job, sync, client, tenant=None, *args, **kwargs):
         """Initialize Meraki.
@@ -232,6 +239,15 @@ class MerakiAdapter(DiffSync):
 
     def load_ipaddress(self, address: str, dev_name: str, location: str, port: str, prefix: str, primary: bool):
         """Load IPAddresses of devices into DiffSync models."""
+        try:
+            self.get(self.prefix, {"prefix": prefix, "location": location})
+        except ObjectNotFound:
+            new_pf = self.prefix(
+                prefix=prefix,
+                location=location,
+                uuid=None,
+            )
+            self.add(new_pf)
         try:
             self.get(self.ipaddress, {"address": address, "location": location})
         except ObjectNotFound:
