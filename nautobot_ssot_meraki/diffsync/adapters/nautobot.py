@@ -98,10 +98,32 @@ class NautobotAdapter(DiffSync):
                 self.add(new_port)
                 dev = self.get(self.device, intf.device.name)
                 dev.add_child(new_port)
+                if len(intf.ip_addresses.all()) > 0:
+                    for ipaddr in intf.ip_addresses.all():
+                        prefix = str(ipaddress_interface(ip=str(ipaddr.address), attr="network.with_prefixlen"))
+                        try:
+                            self.get(self.prefix, {"prefix": prefix, "location": intf.device.site.name})
+                        except ObjectNotFound:
+                            pf = Prefix.objects.get(prefix=prefix, site=intf.device.site)
+                            new_pf = self.prefix(
+                                prefix=prefix,
+                                location=intf.device.site.name,
+                                uuid=pf.id,
+                            )
+                            self.add(new_pf)
+                        new_ip = self.ipaddress(
+                            address=str(ipaddr.address),
+                            device=intf.device.name,
+                            location=intf.device.site.name,
+                            port=intf.name,
+                            prefix=prefix,
+                            primary=True if getattr(ipaddr, "primary_ip_for") else False,
+                            uuid=ipaddr.id,
+                        )
+                        self.add(new_ip)
 
     def load(self):
         """Load data from Nautobot into DiffSync models."""
         self.load_sites()
         self.load_devices()
         self.load_ports()
-        self.load_ipaddresses()
