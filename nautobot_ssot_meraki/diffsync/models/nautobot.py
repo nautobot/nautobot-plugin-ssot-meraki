@@ -193,11 +193,7 @@ class NautobotIPAddress(IPAddress):
         )
         new_ip.validated_save()
         if attrs.get("device") and attrs.get("port"):
-            dev = NewDevice.objects.get(name=attrs["device"])
-            intf = Interface.objects.get(name=attrs["port"], device=dev)
-            new_ip.assigned_object_type = ContentType.objects.get_for_model(Interface)
-            new_ip.assigned_object_id = intf.id
-            intf.validated_save()
+                new_ip.validated_save()
 
             if attrs.get("primary"):
                 if new_ip.family == 4:
