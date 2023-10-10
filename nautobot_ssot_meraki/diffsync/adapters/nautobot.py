@@ -94,19 +94,8 @@ class NautobotAdapter(DiffSync):
                     uuid=intf.id,
                 )
                 self.add(new_port)
-
-    def load_ipaddresses(self):
-        for ipaddr in IPAddress.objects.all():
-            new_ip = self.ipaddress(
-                address=str(ipaddr.address),
-                device=ipaddr.assigned_object.device.name if ipaddr.assigned_object else "",
-                location=ipaddr.assigned_object.device.site.name if ipaddr.assigned_object else "",
-                port=ipaddr.assigned_object.name if ipaddr.assigned_object else "",
-                prefix=ipaddress_interface(ip=str(ipaddr.addreess), attr="network.with_prefixlen"),
-                primary=True if getattr(ipaddr, "primary_ip_for") else False,
-                uuid=ipaddr.id,
-            )
-            self.add(new_ip)
+                dev = self.get(self.device, intf.device.name)
+                dev.add_child(new_port)
 
     def load(self):
         """Load data from Nautobot into DiffSync models."""
