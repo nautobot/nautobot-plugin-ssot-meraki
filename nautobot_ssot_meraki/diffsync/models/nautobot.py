@@ -193,14 +193,21 @@ class NautobotIPAddress(IPAddress):
         )
         new_ip.validated_save()
         if attrs.get("device") and attrs.get("port"):
+            try:
+                dev = NewDevice.objects.get(name=attrs["device"])
+                intf = Interface.objects.get(name=attrs["port"], device=dev)
+                new_ip.assigned_object_type = ContentType.objects.get_for_model(Interface)
+                new_ip.assigned_object_id = intf.id
                 new_ip.validated_save()
 
-            if attrs.get("primary"):
-                if new_ip.family == 4:
-                    dev.primary_ip4 = new_ip
-                else:
-                    dev.primary_ip6 = new_ip
-            dev.validated_save()
+                if attrs.get("primary"):
+                    if new_ip.family == 4:
+                        dev.primary_ip4 = new_ip
+                    else:
+                        dev.primary_ip6 = new_ip
+                dev.validated_save()
+            except NewDevice.DoesNotExist:
+                diffsync.job.log_warning(message=f"Unable to find Device {attrs['device']} to assign {new_ip.address}.")
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
     def update(self, attrs):
