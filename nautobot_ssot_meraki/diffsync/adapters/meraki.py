@@ -117,18 +117,21 @@ class MerakiAdapter(DiffSync):
                     for link in uplinks:
                         if link["interface"] == port and link["status"] == "active":
                             uplink_status = "Active"
+                port_uplink_settings = uplink_settings[port]
                 new_port = self.port(
                     name=port,
                     device=device.name,
                     management=True,
-                    enabled=uplink_settings[port]["enabled"],
+                    enabled=port_uplink_settings["enabled"],
                     port_type="1000base-t",
                     port_status=uplink_status,
-                    tagging=uplink_settings[port]["vlanTagging"]["enabled"],
+                    tagging=port_uplink_settings["vlanTagging"]["enabled"],
                     uuid=None,
                 )
                 self.add(new_port)
                 device.add_child(new_port)
+                if port_uplink_settings["svis"]["ipv4"]["assignmentMode"] == "static":
+                    port_svis = port_uplink_settings["svis"]["ipv4"]
                     prefix = ipaddress_interface(ip=port_svis["address"], attr="network.with_prefixlen")
                     self.load_ipaddress(
                         address=port_svis["address"],
