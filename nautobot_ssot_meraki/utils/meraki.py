@@ -162,11 +162,12 @@ class DashboardClient:
         ports = {}
         try:
             ports = self.conn.appliance.getDeviceApplianceUplinksSettings(serial=serial)
+            ports = ports["interfaces"]
         except meraki.APIError as err:
             self.logger.log_warning(
                 message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
-        return ports["interfaces"]
+        return ports
 
     def get_switchport_statuses(self, serial: str) -> dict:
         """Retrieve statuses for all switchports on specified MS Device.
