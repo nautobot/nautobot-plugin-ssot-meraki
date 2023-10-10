@@ -130,7 +130,7 @@ class DashboardClient:
             )
         return statuses
 
-    def get_management_ports(self, serial: str) -> list:
+    def get_management_ports(self, serial: str) -> dict:
         """Retrieve device management ports from Meraki dashboard.
 
         Args:
@@ -139,11 +139,11 @@ class DashboardClient:
         Returns:
             list: List of management ports and associated information.
         """
-        ports = []
+        ports = {}
         try:
-            result = self.conn.devices.getDeviceManagementInterface(serial=serial)
-            if result.get("ddnsHostnames"):
-                result.pop("ddnsHostnames")
+            ports = self.conn.devices.getDeviceManagementInterface(serial=serial)
+            if ports.get("ddnsHostnames"):
+                ports.pop("ddnsHostnames")
         except meraki.APIError as err:
             self.logger.log_warning(
                 message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
