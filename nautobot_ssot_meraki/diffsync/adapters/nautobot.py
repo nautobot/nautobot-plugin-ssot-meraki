@@ -3,12 +3,13 @@
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
 from nautobot.dcim.models import Device, Interface, Site
-from nautobot.ipam.models import IPAddress
+from nautobot.ipam.models import Prefix
 from netutils.ip import ipaddress_interface
 from nautobot_ssot_meraki.diffsync.models.nautobot import (
     NautobotDevice,
     NautobotNetwork,
     NautobotPort,
+    NautobotPrefix,
     NautobotIPAddress,
 )
 from nautobot_ssot_meraki.utils.nautobot import get_tag_strings
@@ -20,9 +21,10 @@ class NautobotAdapter(DiffSync):
     network = NautobotNetwork
     device = NautobotDevice
     port = NautobotPort
+    prefix = NautobotPrefix
     ipaddress = NautobotIPAddress
 
-    top_level = ["network", "device", "port", "ipaddress"]
+    top_level = ["network", "device", "prefix", "ipaddress"]
 
     def __init__(self, *args, job=None, sync=None, **kwargs):
         """Initialize Nautobot.

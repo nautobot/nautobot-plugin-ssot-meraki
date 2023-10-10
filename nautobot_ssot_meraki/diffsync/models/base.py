@@ -65,6 +65,20 @@ class Port(DiffSyncModel):
     uuid: Optional[UUID]
 
 
+class Prefix(DiffSyncModel):
+    """DiffSync model for Meraki Prefixes."""
+
+    _modelname = "prefix"
+    _identifiers = ("prefix", "location")
+    _attributes = ()
+    _children = {}
+
+    prefix: str
+    location: str
+
+    uuid: Optional[UUID]
+
+
 class IPAddress(DiffSyncModel):
     """DiffSync model for Meraki IP Addresses."""
 
