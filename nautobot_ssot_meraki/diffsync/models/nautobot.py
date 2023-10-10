@@ -69,7 +69,7 @@ class NautobotDevice(Device):
         cisco_manu = Manufacturer.objects.get_or_create(name="Cisco Meraki")[0]
         new_device = NewDevice(
             name=ids["name"],
-            platform=Platform.objects.get_or_create(name="Meraki", slug="meraki", network_driver="meraki")[0],
+            platform=Platform.objects.get(name="Meraki"),
             serial=attrs["serial"],
             status=Status.objects.get_or_create(name=attrs["status"])[0],
             device_role=DeviceRole.objects.get_or_create(name=attrs["role"])[0],
