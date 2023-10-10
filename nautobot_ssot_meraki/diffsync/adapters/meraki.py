@@ -86,17 +86,15 @@ class MerakiAdapter(DiffSync):
                     )
                     self.add(new_dev)
                     if dev["model"].startswith(("MX", "MG", "Z")):
-                        self.load_firewall_ports(
-                            device_name=dev["name"], serial=dev["serial"], network_id=dev["networkId"]
-                        )
+                        self.load_firewall_ports(device=new_dev, serial=dev["serial"], network_id=dev["networkId"])
                     if dev["model"].startswith("MS"):
-                        self.load_switch_ports(device_name=dev["name"], serial=dev["serial"])
+                        self.load_switch_ports(device=new_dev, serial=dev["serial"])
                     if dev["model"].startswith("MR"):
-                        self.load_ap_ports(device_name=dev["name"], serial=dev["serial"])
+                        self.load_ap_ports(device=new_dev, serial=dev["serial"])
             else:
                 self.job.log_warning(message=f"Device serial {dev['serial']} is missing hostname so will be skipped.")
 
-    def load_firewall_ports(self, device_name: str, serial: str, network_id: str):
+    def load_firewall_ports(self, device: MerakiDevice, serial: str, network_id: str):
         """Load ports of a firewall, cellular, or teleworker device from Meraki dashboard into DiffSync models."""
         mgmt_ports = self.conn.get_management_ports(serial=serial)
         uplink_settings = self.conn.get_uplink_settings(serial=serial)
@@ -104,7 +102,7 @@ class MerakiAdapter(DiffSync):
 
         for port in mgmt_ports.keys():
             try:
-                self.get(self.port, {"name": port, "device": device_name})
+                self.get(self.port, {"name": port, "device": device.name})
             except ObjectNotFound:
                 uplink_status = "Planned"
                 if serial in self.org_uplink_statuses:
@@ -114,7 +112,7 @@ class MerakiAdapter(DiffSync):
                             uplink_status = "Active"
                 new_port = self.port(
                     name=port,
-                    device=device_name,
+                    device=device.name,
                     management=True,
                     enabled=uplink_settings[port]["enabled"],
                     port_type="1000base-t",
@@ -123,12 +121,10 @@ class MerakiAdapter(DiffSync):
                     uuid=None,
                 )
                 self.add(new_port)
-                if uplink_settings[port]["svis"]["ipv4"]["assignmentMode"] == "static":
-                    port_svis = uplink_settings[port]["svis"]["ipv4"]
-                    prefix = ipaddress_interface(ip=port_svis["address"], attr="with_prefixlen")
+                device.add_child(new_port)
                     self.load_ipaddress(
                         address=port_svis["address"],
-                        dev_name=device_name,
+                        dev_name=device.name,
                         location=self.conn.network_map[network_id]["name"],
                         port=port,
                         prefix=prefix,
@@ -136,11 +132,11 @@ class MerakiAdapter(DiffSync):
                     )
         for port in lan_ports:
             try:
-                self.get(self.port, {"name": port["number"], "device": device_name})
+                self.get(self.port, {"name": port["number"], "device": device.name})
             except ObjectNotFound:
                 new_port = self.port(
                     name=port["number"],
-                    device=device_name,
+                    device=device.name,
                     management=False,
                     enabled=port["enabled"],
                     port_type="1000base-t",
@@ -149,19 +145,20 @@ class MerakiAdapter(DiffSync):
                     uuid=None,
                 )
                 self.add(new_port)
+                device.add_child(new_port)
 
-    def load_switch_ports(self, device_name: str, serial: str):
+    def load_switch_ports(self, device: MerakiDevice, serial: str):
         """Load ports of a switch device from Meraki dashboard into DiffSync models."""
         mgmt_ports = self.conn.get_management_ports(serial=serial)
         org_switchports = self.conn.get_org_switchports()
 
         for port in mgmt_ports.keys():
             try:
-                self.get(self.port, {"name": port, "device": device_name})
+                self.get(self.port, {"name": port, "device": device.name})
             except ObjectNotFound:
                 mgmt_port = self.port(
                     name=port,
-                    device=device_name,
+                    device=device.name,
                     management=True,
                     enabled=True,
                     port_type="1000base-t",
@@ -170,6 +167,7 @@ class MerakiAdapter(DiffSync):
                     uuid=None,
                 )
                 self.add(mgmt_port)
+                device.add_child(mgmt_port)
                 if mgmt_ports[port].get("usingStaticIp"):
                     prefix = ipaddress_interface(
                         ip=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(netmask=mgmt_ports[port]['staticSubnetMask'])}",
@@ -177,8 +175,8 @@ class MerakiAdapter(DiffSync):
                     )
                     self.load_ipaddress(
                         address=mgmt_ports[port]["staticIp"],
-                        dev_name=device_name,
-                        location=self.conn.network_map[self.device_map[device_name]["networkId"]]["name"],
+                        dev_name=device.name,
+                        location=self.conn.network_map[self.device_map[device.name]["networkId"]]["name"],
                         port=port,
                         prefix=prefix,
                         primary=True,
@@ -187,7 +185,7 @@ class MerakiAdapter(DiffSync):
             for port in org_switchports[serial]["ports"]:
                 new_port = self.port(
                     name=port["portId"],
-                    device=device_name,
+                    device=device.name,
                     management=False,
                     enabled=port["enabled"],
                     port_type="1000base-t",
@@ -196,18 +194,19 @@ class MerakiAdapter(DiffSync):
                     uuid=None,
                 )
                 self.add(new_port)
+                device.add_child(new_port)
 
-    def load_ap_ports(self, device_name: str, serial: str):
+    def load_ap_ports(self, device: MerakiDevice, serial: str):
         """Load ports of a MR device from Meraki dashboard into DiffSync models."""
         mgmt_ports = self.conn.get_management_ports(serial=serial)
 
         for port in mgmt_ports.keys():
             try:
-                self.get(self.port, {"name": port, "device": device_name})
+                self.get(self.port, {"name": port, "device": device.name})
             except ObjectNotFound:
                 new_port = self.port(
                     name=port,
-                    device=device_name,
+                    device=device.name,
                     management=True,
                     enabled=True,
                     port_type="1000base-t",
@@ -216,6 +215,7 @@ class MerakiAdapter(DiffSync):
                     uuid=None,
                 )
                 self.add(new_port)
+                device.add_child(new_port)
                 if mgmt_ports[port].get("usingStaticIp"):
                     prefix = ipaddress_interface(
                         ip=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(netmask=mgmt_ports[port]['staticSubnetMask'])}",
@@ -223,8 +223,8 @@ class MerakiAdapter(DiffSync):
                     )
                     self.load_ipaddress(
                         address=mgmt_ports[port]["staticIp"],
-                        dev_name=device_name,
-                        location=self.conn.network_map[self.device_map[device_name]["networkId"]]["name"],
+                        dev_name=device.name,
+                        location=self.conn.network_map[self.device_map[device.name]["networkId"]]["name"],
                         port=port,
                         prefix=prefix,
                         primary=True,
