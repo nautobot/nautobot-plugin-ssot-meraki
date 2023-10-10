@@ -129,6 +129,7 @@ class MerakiAdapter(DiffSync):
                 )
                 self.add(new_port)
                 device.add_child(new_port)
+                    prefix = ipaddress_interface(ip=port_svis["address"], attr="network.with_prefixlen")
                     self.load_ipaddress(
                         address=port_svis["address"],
                         dev_name=device.name,
@@ -178,7 +179,7 @@ class MerakiAdapter(DiffSync):
                 if mgmt_ports[port].get("usingStaticIp"):
                     prefix = ipaddress_interface(
                         ip=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(netmask=mgmt_ports[port]['staticSubnetMask'])}",
-                        attr="with_prefixlen",
+                        attr="network.with_prefixlen",
                     )
                     self.load_ipaddress(
                         address=mgmt_ports[port]["staticIp"],
@@ -226,7 +227,7 @@ class MerakiAdapter(DiffSync):
                 if mgmt_ports[port].get("usingStaticIp"):
                     prefix = ipaddress_interface(
                         ip=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(netmask=mgmt_ports[port]['staticSubnetMask'])}",
-                        attr="with_prefixlen",
+                        attr="network.with_prefixlen",
                     )
                     self.load_ipaddress(
                         address=mgmt_ports[port]["staticIp"],
