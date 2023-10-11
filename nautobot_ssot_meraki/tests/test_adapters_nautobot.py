@@ -53,11 +53,11 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         )
         new_note.validated_save()
 
-        cisco_manu = Manufacturer.objects.create(name="Cisco", slug="cisco")
+        cisco_manu = Manufacturer.objects.get(name="Cisco Meraki")
         cisco_manu.validated_save()
 
-        asr1k = DeviceType.objects.create(model="ASR1000", manufacturer=cisco_manu)
-        asr1k.validated_save()
+        mx84 = DeviceType.objects.create(model="MX84", manufacturer=cisco_manu)
+        mx84.validated_save()
 
         core_role = DeviceRole.objects.get_or_create(name="CORE")[0]
 
@@ -66,7 +66,7 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
             serial="ABC-123-456",
             status=self.status_active,
             device_role=core_role,
-            device_type=asr1k,
+            device_type=mx84,
             site=site1,
         )
         lab01.validated_save()
