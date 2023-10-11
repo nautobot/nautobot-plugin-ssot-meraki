@@ -42,10 +42,6 @@ class MerakiAdapter(DiffSync):
 
     def load_networks(self):
         """Load networks from Meraki dashboard into DiffSync models."""
-        if self.tenant:
-            tenant = self.tenant.name
-        else:
-            tenant = None
         for net in self.conn.get_org_networks():
             try:
                 self.get(self.network, net["name"])
@@ -56,7 +52,7 @@ class MerakiAdapter(DiffSync):
                     timezone=net["timeZone"],
                     notes=net["notes"] if net.get("notes") else "",
                     tags=net["tags"],
-                    tenant=tenant,
+                    tenant=self.tenant.name if self.tenant else None,
                     uuid=None,
                 )
                 self.add(new_network)
@@ -64,10 +60,6 @@ class MerakiAdapter(DiffSync):
     def load_devices(self):
         """Load devices from Meraki dashboard into DiffSync models."""
         self.device_map = {dev["name"]: dev for dev in self.conn.get_org_devices()}
-        if self.tenant:
-            tenant = self.tenant.name
-        else:
-            tenant = None
         statuses = self.conn.get_device_statuses()
         status = "Offline"
         for dev in self.device_map.values():
@@ -87,7 +79,7 @@ class MerakiAdapter(DiffSync):
                         role=parse_hostname_for_role(dev_hostname=dev["name"]),
                         model=dev["model"],
                         network=self.conn.network_map[dev["networkId"]]["name"],
-                        tenant=tenant,
+                        tenant=self.tenant.name if self.tenant else None,
                         uuid=None,
                         version=dev["firmware"],
                     )
@@ -262,6 +254,7 @@ class MerakiAdapter(DiffSync):
                 port=port,
                 prefix=prefix,
                 primary=primary,
+                tenant=self.tenant.name if self.tenant else None,
                 uuid=None,
             )
             self.add(new_ip)
