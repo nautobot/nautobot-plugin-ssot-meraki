@@ -26,11 +26,11 @@ class NautobotAdapter(DiffSync):
 
     top_level = ["network", "device", "prefix", "ipaddress"]
 
-    def __init__(self, *args, job=None, sync=None, **kwargs):
+    def __init__(self, *args, job, sync=None, **kwargs):
         """Initialize Nautobot.
 
         Args:
-            job (object, optional): Nautobot job. Defaults to None.
+            job (object): Nautobot job.
             sync (object, optional): Nautobot DiffSync. Defaults to None.
         """
         super().__init__(*args, **kwargs)
