@@ -116,8 +116,7 @@ class NautobotAdapter(DiffSync):
                             device=intf.device.name,
                             location=intf.device.site.name,
                             port=intf.name,
-                            prefix=prefix,
-                            primary=True if getattr(ipaddr, "primary_ip_for") else False,
+                            tenant=intf.device.tenant.name if intf.device.tenant else None,
                             uuid=ipaddr.id,
                         )
                         self.add(new_ip)
