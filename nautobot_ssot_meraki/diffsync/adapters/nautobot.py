@@ -100,22 +100,28 @@ class NautobotAdapter(DiffSync):
                 dev.add_child(new_port)
                 if len(intf.ip_addresses.all()) > 0:
                     for ipaddr in intf.ip_addresses.all():
-                        prefix = str(ipaddress_interface(ip=str(ipaddr.address), attr="network.with_prefixlen"))
-                        try:
-                            self.get(self.prefix, {"prefix": prefix, "location": intf.device.site.name})
-                        except ObjectNotFound:
-                            pf = Prefix.objects.get(prefix=prefix, site=intf.device.site)
-                            new_pf = self.prefix(
-                                prefix=prefix,
-                                location=intf.device.site.name,
-                                uuid=pf.id,
-                            )
-                            self.add(new_pf)
+                        pf_found = Prefix.objects.net_contains(ipaddr.host).last()
+                        if pf_found:
+                            try:
+                                self.get(
+                                    self.prefix, {"prefix": str(pf_found.prefix), "location": intf.device.site.name}
+                                )
+                            except ObjectNotFound:
+                                new_pf = self.prefix(
+                                    prefix=str(pf_found.prefix),
+                                    location=intf.device.site.name,
+                                    uuid=pf_found.id,
+                                )
+                                self.add(new_pf)
+                        else:
+                            self.job.log_warning(message=f"Unable to find prefix for IP Address {ipaddr.host}.")
                         new_ip = self.ipaddress(
                             address=str(ipaddr.address),
                             device=intf.device.name,
                             location=intf.device.site.name,
                             port=intf.name,
+                            prefix=str(pf_found.prefix) if pf_found else "",
+                            primary=hasattr(ipaddr, "primary_ip4_for") or hasattr(ipaddr, "primary_ip6_for"),
                             tenant=intf.device.tenant.name if intf.device.tenant else None,
                             uuid=ipaddr.id,
                         )
