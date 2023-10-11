@@ -18,7 +18,7 @@ def nautobot_database_ready_callback(sender, *, apps, **kwargs):  # pylint: disa
         "slug": "meraki",
         "network_driver": "meraki",
     }
-    Platform.objects.update_or_create(name_ic="Meraki", defaults=plat_dict)
+    Platform.objects.update_or_create(name__icontains="Meraki", defaults=plat_dict)
     os_cf_dict = {
         "name": "os_version",
         "slug": "os_version",
