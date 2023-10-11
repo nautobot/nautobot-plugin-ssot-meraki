@@ -210,6 +210,8 @@ class NautobotIPAddress(IPAddress):
             address=ids["address"],
             status=Status.objects.get(name="Active"),
         )
+        if attrs.get("tenant"):
+            new_ip.tenant = Tenant.objects.get(name=attrs["tenant"])
         new_ip.validated_save()
         if attrs.get("device") and attrs.get("port"):
             try:

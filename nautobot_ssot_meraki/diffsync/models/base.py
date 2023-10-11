@@ -84,7 +84,7 @@ class IPAddress(DiffSyncModel):
 
     _modelname = "ipaddress"
     _identifiers = ("address", "location")
-    _attributes = ("device", "port", "prefix", "primary")
+    _attributes = ("device", "port", "prefix", "primary", "tenant")
     _children = {}
 
     address: str
@@ -93,5 +93,6 @@ class IPAddress(DiffSyncModel):
     port: str
     prefix: str
     primary: bool
+    tenant: Optional[str]
 
     uuid: Optional[UUID]
