@@ -177,7 +177,7 @@ class MerakiAdapter(DiffSync):
                         attr="network.with_prefixlen",
                     )
                     self.load_ipaddress(
-                        address=mgmt_ports[port]["staticIp"],
+                        address=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(mgmt_ports[port]['staticSubnetMask'])}",
                         dev_name=device.name,
                         location=self.conn.network_map[self.device_map[device.name]["networkId"]]["name"],
                         port=port,
@@ -225,7 +225,7 @@ class MerakiAdapter(DiffSync):
                         attr="network.with_prefixlen",
                     )
                     self.load_ipaddress(
-                        address=mgmt_ports[port]["staticIp"],
+                        address=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(mgmt_ports[port]['staticSubnetMask'])}",
                         dev_name=device.name,
                         location=self.conn.network_map[self.device_map[device.name]["networkId"]]["name"],
                         port=port,
