@@ -88,7 +88,10 @@ class NautobotDevice(Device):
         if attrs.get("tags"):
             new_device.tags.set(attrs["tags"])
         if attrs.get("tenant"):
-            new_device.tenant = Tenant.objects.get(name=attrs["tenant"])
+            if attrs.get("tenant"):
+                new_device.tenant = Tenant.objects.get(name=attrs["tenant"])
+            else:
+                new_device.tenant = None
         if attrs.get("version"):
             new_device._custom_field_data["os_version"] = attrs["version"]
         new_device.validated_save()
@@ -246,6 +249,11 @@ class NautobotIPAddress(IPAddress):
             else:
                 dev.primary_ip6 = ip
             dev.validated_save()
+        if "tenant" in attrs:
+            if attrs.get("tenant"):
+                ip.tenant = Tenant.objects.get(name=attrs["tenant"])
+            else:
+                ip.tenant = None
         ip.validated_save()
         return super().update(attrs)
 
