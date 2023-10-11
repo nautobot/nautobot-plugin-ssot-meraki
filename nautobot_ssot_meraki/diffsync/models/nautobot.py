@@ -66,7 +66,7 @@ class NautobotDevice(Device):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create Device in Nautobot from NautobotDevice object."""
-        cisco_manu = Manufacturer.objects.get_or_create(name="Cisco Meraki")[0]
+        cisco_manu = Manufacturer.objects.get(name="Cisco Meraki")
         new_device = NewDevice(
             name=ids["name"],
             platform=Platform.objects.get(name="Meraki"),
