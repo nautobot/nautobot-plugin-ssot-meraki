@@ -247,9 +247,9 @@ class NautobotIPAddress(IPAddress):
         if "primary" in attrs:
             dev = ip.assigned_object.device
             if ip.family == 4:
-                dev.primary_ip4 = ip
+                dev.primary_ip4 = ip if attrs["primary"] else None
             else:
-                dev.primary_ip6 = ip
+                dev.primary_ip6 = ip if attrs["primary"] else None
             dev.validated_save()
         if "tenant" in attrs:
             if attrs.get("tenant"):
