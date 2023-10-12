@@ -114,7 +114,7 @@ class DashboardClient:
             )
         return port_map
 
-    def get_device_statuses(self) -> dict:
+    def get_org_device_statuses(self) -> dict:
         """Retrieve device statuses from Meraki dashboard.
 
         Returns:
