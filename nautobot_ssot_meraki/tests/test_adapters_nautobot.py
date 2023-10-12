@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from nautobot.dcim.models import Device, DeviceType, DeviceRole, Interface, Manufacturer, Site
+from nautobot.dcim.models import Device, DeviceType, DeviceRole, Interface, Manufacturer, Platform, Site
 from nautobot.extras.models import Job, JobResult, Note, Status
 from nautobot.utilities.testing import TransactionTestCase
 
@@ -56,6 +56,8 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         cisco_manu = Manufacturer.objects.get(name="Cisco Meraki")
         cisco_manu.validated_save()
 
+        meraki_plat = Platform.objects.get(name="Meraki")
+
         mx84 = DeviceType.objects.create(model="MX84", manufacturer=cisco_manu)
         mx84.validated_save()
 
@@ -67,6 +69,7 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
             status=self.status_active,
             device_role=core_role,
             device_type=mx84,
+            platform=meraki_plat,
             site=site1,
         )
         lab01.validated_save()
