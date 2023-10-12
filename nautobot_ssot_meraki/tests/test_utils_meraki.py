@@ -97,6 +97,7 @@ class TestDashboardClient(TestCase):
         self.assertEqual(actual, expected)
 
     def test_get_org_switchports(self):
+        """Test the get_org_switchports() response is as expected."""
         logger = MagicMock()
         org_id = "123456789"
         token = "your_api_token"  # nosec: B105
@@ -106,4 +107,17 @@ class TestDashboardClient(TestCase):
 
         actual = client.get_org_switchports()
         expected = fix.GET_ORG_SWITCHPORTS_RECV_FIXTURE
+        self.assertEqual(actual, expected)
+
+    def test_get_org_device_statuses(self):
+        """Test the get_org_device_statuses() response is as expected."""
+        logger = MagicMock()
+        org_id = "123456789"
+        token = "your_api_token"  # nosec: B105
+        client = DashboardClient(logger, org_id, token)
+        client.conn.organizations.getOrganizationDevicesStatuses = MagicMock()
+        client.conn.organizations.getOrganizationDevicesStatuses.return_value = fix.GET_ORG_DEVICE_STATUSES_SENT_FIXTURE
+
+        actual = client.get_org_device_statuses()
+        expected = fix.GET_ORG_DEVICE_STATUSES_RECV_FIXTURE
         self.assertEqual(actual, expected)
