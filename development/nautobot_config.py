@@ -140,8 +140,10 @@ PLUGINS_CONFIG = {
     "nautobot_ssot": {
         "hide_example_jobs": True,
     },
-    # 'nautobot_ssot_meraki': {
-    #     'foo': 'bar',
-    #     'buzz': 'bazz'
-    # }
+    "nautobot_ssot_meraki": {
+        "meraki_org_id": os.getenv("MERAKI_ORG_ID", ""),
+        "meraki_token": os.getenv("MERAKI_TOKEN", ""),
+        "update_locations": is_truthy(os.getenv("NAUTOBOT_DNAC_SSOT_UPDATE_LOCATIONS", False)),
+        "hostname_mapping": [],
+    },
 }
