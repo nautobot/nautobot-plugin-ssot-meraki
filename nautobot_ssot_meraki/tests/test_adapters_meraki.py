@@ -1,6 +1,4 @@
 """Test Meraki adapter."""
-
-import json
 import uuid
 from unittest.mock import MagicMock
 
@@ -9,18 +7,7 @@ from nautobot.extras.models import Job, JobResult
 from nautobot.utilities.testing import TransactionTestCase
 from nautobot_ssot_meraki.diffsync.adapters.meraki import MerakiAdapter
 from nautobot_ssot_meraki.jobs import MerakiDataSource
-
-
-def load_json(path):
-    """Load a json file."""
-    with open(path, encoding="utf-8") as file:
-        return json.loads(file.read())
-
-
-GET_ORG_NETWORKS_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_networks.json")
-NETWORK_MAP_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/network_map.json")
-GET_ORG_DEVICES_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_devices.json")
-GET_DEVICE_STATUSES_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_device_statuses.json")
+from nautobot_ssot_meraki.tests.fixtures import fixtures as fix
 
 
 class TestMerakiAdapterTestCase(TransactionTestCase):
@@ -31,10 +18,16 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
     def setUp(self):
         """Initialize test case."""
         self.meraki_client = MagicMock()
-        self.meraki_client.get_org_networks.return_value = GET_ORG_NETWORKS_FIXTURE
-        self.meraki_client.network_map = NETWORK_MAP_FIXTURE
-        self.meraki_client.get_org_devices.return_value = GET_ORG_DEVICES_FIXTURE
-        self.meraki_client.get_device_statuses.return_value = GET_DEVICE_STATUSES_FIXTURE
+        self.meraki_client.get_org_networks.return_value = fix.GET_ORG_NETWORKS_SENT_FIXTURE
+        self.meraki_client.network_map = fix.NETWORK_MAP_FIXTURE
+        self.meraki_client.get_org_devices.return_value = fix.GET_ORG_DEVICES_FIXTURE
+        self.meraki_client.get_org_device_statuses.return_value = fix.GET_ORG_DEVICE_STATUSES_RECV_FIXTURE
+        self.meraki_client.get_management_ports.return_value = fix.GET_MANAGEMENT_PORTS_RECV_FIXTURE
+        self.meraki_client.get_uplink_settings.return_value = fix.GET_UPLINK_SETTINGS_RECV
+        self.meraki_client.get_switchport_statuses.return_value = fix.GET_SWITCHPORT_STATUSES
+        self.meraki_client.get_org_uplink_statuses.return_value = fix.GET_ORG_UPLINK_STATUSES_RECV_FIXTURE
+        self.meraki_client.get_appliance_switchports.return_value = fix.GET_APPLIANCE_SWITCHPORTS_FIXTURE
+        self.meraki_client.get_org_switchports.return_value = fix.GET_ORG_SWITCHPORTS_RECV_FIXTURE
 
         self.job = MerakiDataSource()
         self.job.job_result = JobResult.objects.create(
@@ -47,10 +40,30 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.meraki_client.validate_organization_exists.return_value = True
         self.meraki.load()
         self.assertEqual(
-            {net["name"] for net in GET_ORG_NETWORKS_FIXTURE},
+            {net["name"] for net in fix.GET_ORG_NETWORKS_SENT_FIXTURE},
             {net.get_unique_id() for net in self.meraki.get_all("network")},
         )
         self.assertEqual(
-            {dev["name"] for dev in GET_ORG_DEVICES_FIXTURE},
+            {dev["name"] for dev in fix.GET_ORG_DEVICES_FIXTURE},
             {dev.get_unique_id() for dev in self.meraki.get_all("device")},
         )
+        wan1_ports = [
+            f"wan1__{dev['name']}"
+            for dev in fix.GET_ORG_DEVICES_FIXTURE
+            if dev["model"].startswith(("MX", "MG", "MR", "MS", "Z"))
+        ]
+        wan2_ports = [
+            f"wan2__{dev['name']}"
+            for dev in fix.GET_ORG_DEVICES_FIXTURE
+            if dev["model"].startswith(("MX", "MG", "MR", "MS", "Z"))
+        ]
+        lan_ports = []
+        for port in fix.GET_APPLIANCE_SWITCHPORTS_FIXTURE:
+            for dev in fix.GET_ORG_DEVICES_FIXTURE:
+                if dev["model"].startswith(("MX", "MG", "Z")):
+                    lan_ports.append(f"{port['number']}__{dev['name']}")
+        for switch in fix.GET_ORG_SWITCHPORTS_SENT_FIXTURE:
+            for port in switch["ports"]:
+                lan_ports.append(f"{port['portId']}__Lab Switch")
+        expected_ports = set(wan1_ports + wan2_ports + lan_ports)
+        self.assertEqual(expected_ports, {port.get_unique_id() for port in self.meraki.get_all("port")})

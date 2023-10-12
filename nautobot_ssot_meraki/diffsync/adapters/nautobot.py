@@ -2,8 +2,15 @@
 
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
-from nautobot.dcim.models import Device, Site
-from nautobot_ssot_meraki.diffsync.models.nautobot import NautobotDevice, NautobotNetwork
+from nautobot.dcim.models import Device, Interface, Site
+from nautobot.ipam.models import Prefix
+from nautobot_ssot_meraki.diffsync.models.nautobot import (
+    NautobotDevice,
+    NautobotNetwork,
+    NautobotPort,
+    NautobotPrefix,
+    NautobotIPAddress,
+)
 from nautobot_ssot_meraki.utils.nautobot import get_tag_strings
 
 
@@ -12,14 +19,17 @@ class NautobotAdapter(DiffSync):
 
     network = NautobotNetwork
     device = NautobotDevice
+    port = NautobotPort
+    prefix = NautobotPrefix
+    ipaddress = NautobotIPAddress
 
-    top_level = ["network", "device"]
+    top_level = ["network", "device", "prefix", "ipaddress"]
 
-    def __init__(self, *args, job=None, sync=None, **kwargs):
+    def __init__(self, *args, job, sync=None, **kwargs):
         """Initialize Nautobot.
 
         Args:
-            job (object, optional): Nautobot job. Defaults to None.
+            job (object): Nautobot job.
             sync (object, optional): Nautobot DiffSync. Defaults to None.
         """
         super().__init__(*args, **kwargs)
@@ -68,7 +78,56 @@ class NautobotAdapter(DiffSync):
                     new_dev.notes = note.note
                 self.add(new_dev)
 
+    def load_ports(self):
+        """Load Port data from Nautobot into DiffSync model."""
+        for intf in Interface.objects.all():
+            try:
+                self.get(self.port, {"name": intf.name, "device": intf.device.name})
+            except ObjectNotFound:
+                new_port = self.port(
+                    name=intf.name,
+                    device=intf.device.name,
+                    management=intf.mgmt_only,
+                    enabled=intf.enabled,
+                    port_type=intf.type,
+                    port_status=intf.status.name,
+                    tagging=False if intf.mode == "access" else True,
+                    uuid=intf.id,
+                )
+                self.add(new_port)
+                dev = self.get(self.device, intf.device.name)
+                dev.add_child(new_port)
+                if len(intf.ip_addresses.all()) > 0:
+                    for ipaddr in intf.ip_addresses.all():
+                        pf_found = Prefix.objects.net_contains(ipaddr.host).last()
+                        if pf_found:
+                            try:
+                                self.get(
+                                    self.prefix, {"prefix": str(pf_found.prefix), "location": intf.device.site.name}
+                                )
+                            except ObjectNotFound:
+                                new_pf = self.prefix(
+                                    prefix=str(pf_found.prefix),
+                                    location=intf.device.site.name,
+                                    uuid=pf_found.id,
+                                )
+                                self.add(new_pf)
+                        else:
+                            self.job.log_warning(message=f"Unable to find prefix for IP Address {ipaddr.host}.")
+                        new_ip = self.ipaddress(
+                            address=str(ipaddr.address),
+                            device=intf.device.name,
+                            location=intf.device.site.name,
+                            port=intf.name,
+                            prefix=str(pf_found.prefix) if pf_found else "",
+                            primary=hasattr(ipaddr, "primary_ip4_for") or hasattr(ipaddr, "primary_ip6_for"),
+                            tenant=intf.device.tenant.name if intf.device.tenant else None,
+                            uuid=ipaddr.id,
+                        )
+                        self.add(new_ip)
+
     def load(self):
         """Load data from Nautobot into DiffSync models."""
         self.load_sites()
         self.load_devices()
+        self.load_ports()

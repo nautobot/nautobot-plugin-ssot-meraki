@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from nautobot.dcim.models import Device, DeviceType, DeviceRole, Manufacturer, Site
+from nautobot.dcim.models import Device, DeviceType, DeviceRole, Interface, Manufacturer, Site
 from nautobot.extras.models import Job, JobResult, Note, Status
 from nautobot.utilities.testing import TransactionTestCase
 
@@ -53,11 +53,11 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         )
         new_note.validated_save()
 
-        cisco_manu = Manufacturer.objects.create(name="Cisco", slug="cisco")
+        cisco_manu = Manufacturer.objects.get(name="Cisco Meraki")
         cisco_manu.validated_save()
 
-        asr1k = DeviceType.objects.create(model="ASR1000", manufacturer=cisco_manu)
-        asr1k.validated_save()
+        mx84 = DeviceType.objects.create(model="MX84", manufacturer=cisco_manu)
+        mx84.validated_save()
 
         core_role = DeviceRole.objects.get_or_create(name="CORE")[0]
 
@@ -66,10 +66,21 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
             serial="ABC-123-456",
             status=self.status_active,
             device_role=core_role,
-            device_type=asr1k,
+            device_type=mx84,
             site=site1,
         )
         lab01.validated_save()
+
+        lab01_mgmt = Interface.objects.create(
+            name="wan1",
+            device=lab01,
+            enabled=True,
+            mode="access",
+            mgmt_only=True,
+            type="1000base-t",
+            status=self.status_active,
+        )
+        lab01_mgmt.validated_save()
 
     def test_data_loading(self):
         """Test the load() function."""
@@ -82,3 +93,4 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
             {dev.name for dev in Device.objects.all()},
             {dev.get_unique_id() for dev in self.nb_adapter.get_all("device")},
         )
+        self.assertEqual({"wan1__Lab01"}, {port.get_unique_id() for port in self.nb_adapter.get_all("port")})
