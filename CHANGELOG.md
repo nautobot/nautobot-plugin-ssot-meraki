@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!--next-version-placeholder-->
 
+## v0.4.0 (2023-10-12)
+
+### Feature
+
+* ✨ Add Tenant attribute to IPAddress DiffSync model. ([`22987aa`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/22987aa0beba4fe2e9c5f5f2df208930a60ed8ef))
+* ✨ Add Prefix DiffSync model to keep track of involved Prefixes ensure no duplicates. ([`976baa2`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/976baa23bd7d1de8d330d097432ead73b2ac3dab))
+* ✨ Add CRUD functions for NautobotIPAddress ([`d8c1228`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/d8c1228e29f921144bbea994eed1cf5c28565120))
+* ✨ Add load functions to both Adapters to pull in IP information and fill DiffSync models. ([`b386f6b`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/b386f6b0fa5c0c64fd6626f626812418d6feee3d))
+* ✨ Add MerakiIPAddress class ([`85a8363`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/85a83632736e2c633130d9b77e44dc42dc2371d3))
+* ✨ Add base IPAddress DiffSync model. ([`50583da`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/50583dae2fca1a614024f5b50b635937c509dc74))
+* ✨ Add function for loading MR ports ([`a86a917`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/a86a917ea688fba4b344a14974bf54316eccf0b9))
+* ✨ Add function to load ports for MS devices ([`09b4dbe`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/09b4dbe9ce5b43e9ef1fb9644122b071a53568d0))
+* ✨ Add function to get appliance switchports for MX, MG, and Z devices ([`2249a8b`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/2249a8b2b9f57636ac7976421776c49526e8b1b0))
+* ✨ Add CRUD functions for imported Ports ([`36d7050`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/36d70509bb6e4754d99d0cdbfc1e61aac5572653))
+* ✨ Add function to load ports in Nautobot adapter ([`fb07775`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/fb07775bbcca14b65e47247d7e68f5eddce98339))
+* ✨ Add function to retrieve statuses for switch ports. ([`8d7eee6`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/8d7eee6e11ef35d63a6be46f9db70ca91457dbe6))
+* ✨ Add function to retrieve all ports for switches in organization ([`85368f6`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/85368f63c0fe665b0d242399944d05b37e82f32a))
+* ✨ Add MerakiPort model ([`011b2e9`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/011b2e9215cde0520210b281cd60e890b18c2cdf))
+* ✨ Add function to load management ports for devices. ([`1e6db93`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/1e6db932c1d2362555133cc78b5004cd78a2784c))
+* ✨ Create functions to grab information about uplink settings and statuses for loading ports. ([`d7a187b`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/d7a187b190a9ab9ca1524d35c2a630b64d1f3d0a))
+* ✨ Add device map for referencing device information later. ([`5e47d12`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/5e47d12d69eb6b872e55a1836b1245497f72bdd5))
+* ✨ Add Port DiffSync model. ([`10586c9`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/10586c9bc5a4c972b31d8ed4c280bd600f240d77))
+
+### Fix
+
+* 🐛 Redo how primary IP is set so first Active interface is assigned as primary when multiple found. ([`abb1a8c`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/abb1a8c1b6d0c09e6d0a0f13fd8d826b302f8ffe))
+* 🐛 Redo updating of primary to check value of primary attr ([`b8d2095`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/b8d2095954ddf7c1ce9ee76e34e646bf3d8394f1))
+* 🐛 Correct address to include cidr notation. ([`1d7a746`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/1d7a746b6de9410d5307d35d60d47c42088dff88))
+* 🐛 Correct filter to be icontains ([`78609e6`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/78609e6d72814d75b3a095f4771bc0943a03176d))
+* 🐛 Correct prefix to use network ([`96b11ac`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/96b11acf523d1f462f051902b8d9ef16db030f66))
+* 🐛 Ensure IPAddress object is saved once assigned. ([`769aa5b`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/769aa5b49f026004d5f9e26a5cfce20ae7d20f09))
+* 🐛 Correct use of interfaces key to only happen if API request successful. ([`b1140e1`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/b1140e136ccffa2196c56038b6fa480397355120))
+* 🐛 Correct get_management_ports to return API result. ([`e2e563d`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/e2e563d04fc5080a8a1cce3606c7c9e54520c797))
+* 🐛 Specify Platform during device creation. ([`7c556f1`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/7c556f1c7a16d6bac76b9af337c96dc2306b5a59))
+* 🐛 Correct object call to NewDevice to address conflict from DiffSync model of same name. ([`0f5b1a1`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/0f5b1a1da71c7c701a6d2b9377c48511d4dbb2d9))
+
+### Documentation
+
+* 📝 Clarify function applies only to MS devices ([`e0e395a`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/e0e395acb7020ac306b733ec6480df55928f6f5f))
+* 📝 Update docstrings to note raises and returns ([`fa994b3`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/fa994b3e2ed9ca69d3be9ed16be85efcfab69f35))
+
 ## v0.3.0 (2023-09-27)
 
 ### Feature
