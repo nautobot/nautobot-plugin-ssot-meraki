@@ -4,7 +4,6 @@ from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
 from nautobot.dcim.models import Device, Interface, Site
 from nautobot.ipam.models import Prefix
-from netutils.ip import ipaddress_interface
 from nautobot_ssot_meraki.diffsync.models.nautobot import (
     NautobotDevice,
     NautobotNetwork,
