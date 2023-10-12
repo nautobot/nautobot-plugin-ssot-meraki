@@ -174,8 +174,9 @@ class NautobotPort(Port):
             status=Status.objects.get(name=attrs["port_status"]),
         )
         new_port.validated_save()
-        new_port._custom_field_data["system_of_record"] = "Meraki SSoT"
-        new_port._custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
+        new_port.custom_field_data["system_of_record"] = "Meraki SSoT"
+        new_port.custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
+        new_port.validated_save()
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
     def update(self, attrs):
@@ -191,8 +192,8 @@ class NautobotPort(Port):
             port.type = attrs["port_type"]
         if "port_status" in attrs:
             port.status = Status.objects.get(name=attrs["port_status"])
-        port._custom_field_data["system_of_record"] = "Meraki SSoT"
-        port._custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
+        port.custom_field_data["system_of_record"] = "Meraki SSoT"
+        port.custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         port.validated_save()
         return super().update(attrs)
 
@@ -236,8 +237,8 @@ class NautobotIPAddress(IPAddress):
         )
         if attrs.get("tenant"):
             new_ip.tenant = Tenant.objects.get(name=attrs["tenant"])
-        new_ip._custom_field_data["system_of_record"] = "Meraki SSoT"
-        new_ip._custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
+        new_ip.custom_field_data["system_of_record"] = "Meraki SSoT"
+        new_ip.custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         new_ip.validated_save()
         if attrs.get("device") and attrs.get("port"):
             try:
@@ -282,8 +283,8 @@ class NautobotIPAddress(IPAddress):
                 ip.tenant = Tenant.objects.get(name=attrs["tenant"])
             else:
                 ip.tenant = None
-        ip._custom_field_data["system_of_record"] = "Meraki SSoT"
-        ip._custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
+        ip.custom_field_data["system_of_record"] = "Meraki SSoT"
+        ip.custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         ip.validated_save()
         return super().update(attrs)
 
