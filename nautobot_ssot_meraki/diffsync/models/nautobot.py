@@ -1,4 +1,5 @@
 """Nautobot DiffSync models for Meraki SSoT."""
+from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
 from nautobot.dcim.models import Device as NewDevice
 from nautobot.dcim.models import Manufacturer, Site, DeviceRole, DeviceType, Interface, Platform
@@ -106,6 +107,8 @@ class NautobotDevice(Device):
                 soft_lcm = add_software_lcm(version=attrs["version"])
                 assign_version_to_device(diffsync=diffsync, device=new_device, software_lcm=soft_lcm)
             new_device._custom_field_data["os_version"] = attrs["version"]
+        new_device._custom_field_data["system_of_record"] = "Meraki SSoT"
+        new_device._custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         new_device.validated_save()
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
@@ -142,6 +145,8 @@ class NautobotDevice(Device):
                 soft_lcm = add_software_lcm(version=attrs["version"])
                 assign_version_to_device(diffsync=self.diffsync, device=device, software_lcm=soft_lcm)
             device._custom_field_data["os_version"] = attrs["version"]
+        device._custom_field_data["system_of_record"] = "Meraki SSoT"
+        device._custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         device.validated_save()
         return super().update(attrs)
 
@@ -169,6 +174,8 @@ class NautobotPort(Port):
             status=Status.objects.get(name=attrs["port_status"]),
         )
         new_port.validated_save()
+        new_port._custom_field_data["system_of_record"] = "Meraki SSoT"
+        new_port._custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
     def update(self, attrs):
@@ -184,6 +191,8 @@ class NautobotPort(Port):
             port.type = attrs["port_type"]
         if "port_status" in attrs:
             port.status = Status.objects.get(name=attrs["port_status"])
+        port._custom_field_data["system_of_record"] = "Meraki SSoT"
+        port._custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         port.validated_save()
         return super().update(attrs)
 
@@ -227,6 +236,8 @@ class NautobotIPAddress(IPAddress):
         )
         if attrs.get("tenant"):
             new_ip.tenant = Tenant.objects.get(name=attrs["tenant"])
+        new_ip._custom_field_data["system_of_record"] = "Meraki SSoT"
+        new_ip._custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         new_ip.validated_save()
         if attrs.get("device") and attrs.get("port"):
             try:
@@ -271,6 +282,8 @@ class NautobotIPAddress(IPAddress):
                 ip.tenant = Tenant.objects.get(name=attrs["tenant"])
             else:
                 ip.tenant = None
+        ip._custom_field_data["system_of_record"] = "Meraki SSoT"
+        ip._custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         ip.validated_save()
         return super().update(attrs)
 
