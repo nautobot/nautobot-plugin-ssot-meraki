@@ -12,7 +12,12 @@ GET_ORG_NETWORKS_SENT_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures
 GET_ORG_NETWORKS_RECV_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_networks_recv.json")
 NETWORK_MAP_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/network_map.json")
 GET_ORG_DEVICES_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_devices.json")
-GET_DEVICE_STATUSES_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_device_statuses.json")
+GET_ORG_DEVICE_STATUSES_SENT_FIXTURE = load_json(
+    "./nautobot_ssot_meraki/tests/fixtures/get_org_device_statuses_sent.json"
+)
+GET_ORG_DEVICE_STATUSES_RECV_FIXTURE = load_json(
+    "./nautobot_ssot_meraki/tests/fixtures/get_org_device_statuses_recv.json"
+)
 GET_MANAGEMENT_PORTS_SENT_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_management_ports_sent.json")
 GET_MANAGEMENT_PORTS_RECV_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_management_ports_recv.json")
 GET_ORG_SWITCHPORTS_SENT_FIXTURE = load_json("./nautobot_ssot_meraki/tests/fixtures/get_org_switchports_sent.json")
