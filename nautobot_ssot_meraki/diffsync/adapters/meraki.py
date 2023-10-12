@@ -99,6 +99,8 @@ class MerakiAdapter(DiffSync):
         uplink_settings = self.conn.get_uplink_settings(serial=serial)
         lan_ports = self.conn.get_appliance_switchports(network_id=network_id)
 
+        # keep track of whether a primary IP has already been found since we can only assign one
+        primary_found = False
         for port in mgmt_ports.keys():
             try:
                 self.get(self.port, {"name": port, "device": device.name})
@@ -131,8 +133,10 @@ class MerakiAdapter(DiffSync):
                         location=self.conn.network_map[network_id]["name"],
                         port=port,
                         prefix=prefix,
-                        primary=True,
+                        primary=bool(uplink_status == "Active" and not primary_found),
                     )
+                if uplink_status == "Active":
+                    primary_found = True
         for port in lan_ports:
             try:
                 self.get(self.port, {"name": port["number"], "device": device.name})
