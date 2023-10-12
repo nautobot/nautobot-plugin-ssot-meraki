@@ -22,7 +22,7 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.meraki_client.network_map = fix.NETWORK_MAP_FIXTURE
         self.meraki_client.get_org_devices.return_value = fix.GET_ORG_DEVICES_FIXTURE
         self.meraki_client.get_device_statuses.return_value = fix.GET_DEVICE_STATUSES_FIXTURE
-        self.meraki_client.get_management_ports.return_value = fix.GET_MANAGEMENT_PORTS_FIXTURE
+        self.meraki_client.get_management_ports.return_value = fix.GET_MANAGEMENT_PORTS_RECV_FIXTURE
         self.meraki_client.get_uplink_settings.return_value = fix.GET_UPLINK_SETTINGS_RECV
         self.meraki_client.get_switchport_statuses.return_value = fix.GET_SWITCHPORT_STATUSES
         self.meraki_client.get_org_uplink_statuses.return_value = fix.GET_ORG_UPLINK_STATUSES_RECV_FIXTURE
