@@ -10,7 +10,7 @@ from nautobot_ssot_meraki.diffsync.models.base import Device, Network, Port, Pre
 from nautobot_ssot_meraki.utils.nautobot import add_software_lcm, assign_version_to_device
 
 try:
-    from nautobot_device_lifecycle_mgmt.models import SoftwareLCM
+    import nautobot_device_lifecycle_mgmt  # noqa: F401
 
     LIFECYCLE_MGMT = True
 except ImportError:
