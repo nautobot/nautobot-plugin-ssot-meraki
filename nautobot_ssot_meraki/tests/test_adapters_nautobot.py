@@ -73,6 +73,8 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
             site=site1,
         )
         lab01.validated_save()
+        lab01.custom_field_data["system_of_record"] = "Meraki SSoT"
+        lab01.validated_save()
 
         lab01_mgmt = Interface.objects.create(
             name="wan1",
@@ -83,6 +85,8 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
             type="1000base-t",
             status=self.status_active,
         )
+        lab01_mgmt.validated_save()
+        lab01_mgmt.custom_field_data["system_of_record"] = "Meraki SSoT"
         lab01_mgmt.validated_save()
 
     def test_data_loading(self):
