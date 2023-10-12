@@ -7,6 +7,15 @@ from nautobot.ipam.models import IPAddress as OrmIPAddress
 from nautobot.ipam.models import Prefix as OrmPrefix
 from nautobot.tenancy.models import Tenant
 from nautobot_ssot_meraki.diffsync.models.base import Device, Network, Port, Prefix, IPAddress
+from nautobot_ssot_meraki.utils.nautobot import add_software_lcm, assign_version_to_device
+
+try:
+    import nautobot_device_lifecycle_mgmt  # noqa: F401
+
+    LIFECYCLE_MGMT = True
+except ImportError:
+    print("Device Lifecycle plugin isn't installed so will revert to CustomField for OS version.")
+    LIFECYCLE_MGMT = False
 
 
 class NautobotNetwork(Network):
@@ -93,6 +102,9 @@ class NautobotDevice(Device):
             else:
                 new_device.tenant = None
         if attrs.get("version"):
+            if LIFECYCLE_MGMT:
+                soft_lcm = add_software_lcm(version=attrs["version"])
+                assign_version_to_device(diffsync=diffsync, device=new_device, software_lcm=soft_lcm)
             new_device._custom_field_data["os_version"] = attrs["version"]
         new_device.validated_save()
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
@@ -126,6 +138,9 @@ class NautobotDevice(Device):
             else:
                 device.tenant = None
         if "version" in attrs:
+            if LIFECYCLE_MGMT:
+                soft_lcm = add_software_lcm(version=attrs["version"])
+                assign_version_to_device(diffsync=self.diffsync, device=device, software_lcm=soft_lcm)
             device._custom_field_data["os_version"] = attrs["version"]
         device.validated_save()
         return super().update(attrs)
