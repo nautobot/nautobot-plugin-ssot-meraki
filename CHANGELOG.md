@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!--next-version-placeholder-->
 
+## v0.5.0 (2023-10-12)
+
+### Feature
+
+* ✨ Add support for Device Lifecycle Mgmt App if found installed. ([`19a07c3`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/19a07c3d72be59c4ac40cdd7db991485a5ca3fd7))
+
+### Fix
+
+* 🐛 Correct function call to updated name. ([`1a5fb9c`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/1a5fb9c8b4d8976605dea486621860366cf2c304))
+
 ## v0.4.0 (2023-10-12)
 
 ### Feature
