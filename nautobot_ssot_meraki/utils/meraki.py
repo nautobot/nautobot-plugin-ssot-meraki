@@ -216,7 +216,7 @@ def parse_hostname_for_role(dev_hostname: str) -> str:
     Returns:
         str: Name of DeviceRole. Defaults to Unknown.
     """
-    dev_role = "UNKNOWN"
+    dev_role = "Unknown"
     if PLUGIN_CFG.get("hostname_mapping"):
         for entry in PLUGIN_CFG["hostname_mapping"]:
             match = re.match(pattern=entry[0], string=dev_hostname)
