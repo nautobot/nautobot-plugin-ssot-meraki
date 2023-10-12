@@ -11,7 +11,17 @@ def nautobot_database_ready_callback(sender, *, apps, **kwargs):  # pylint: disa
     ContentType = apps.get_model("contenttypes", "ContentType")
     CustomField = apps.get_model("extras", "CustomField")
     Device = apps.get_model("dcim", "Device")
+    Manufacturer = apps.get_model("dcim", "Manufacturer")
+    Platform = apps.get_model("dcim", "Platform")
 
+    cisco_manu = Manufacturer.objects.get_or_create(name="Cisco Meraki")[0]
+    plat_dict = {
+        "name": "Meraki",
+        "manufacturer": cisco_manu,
+        "slug": "meraki",
+        "network_driver": "meraki",
+    }
+    Platform.objects.update_or_create(name__icontains="Meraki", defaults=plat_dict)
     os_cf_dict = {
         "name": "os_version",
         "slug": "os_version",
