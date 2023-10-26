@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!--next-version-placeholder-->
 
+## v0.6.0 (2023-10-26)
+
+### Feature
+
+* ✨ Add SSoT CustomFields to denote origin of object and last update. ([`da6054d`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/da6054dc9858c6ed95522118e739590a0a509327))
+
+### Fix
+
+* 🐛 Ensure SoT CustomField is applied to Ports and set right on Device and Site ([`29eb491`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/29eb49189124242cd20b6061364809744c4e6e07))
+* 🐛 Validate that timezone is defined in Site before trying to load value. ([`02b0444`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/02b0444bbc20c2332de60f475a76e838e885d719))
+
 ## v0.5.0 (2023-10-12)
 
 ### Feature
