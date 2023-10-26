@@ -46,7 +46,7 @@ class NautobotAdapter(DiffSync):
                     name=site.name,
                     notes="",
                     tags=get_tag_strings(list_tags=site.tags),
-                    timezone=site.time_zone.zone,
+                    timezone=site.time_zone.zone if site.time_zone else None,
                     tenant=site.tenant.name if site.tenant else None,
                     uuid=site.id,
                 )
@@ -57,7 +57,7 @@ class NautobotAdapter(DiffSync):
 
     def load_devices(self):
         """Load Device data from Nautobot into DiffSync model."""
-        for dev in Device.objects.filter(platform__name="Meraki"):
+        for dev in Device.objects.filter(_custom_field_data__system_of_record="Meraki SSoT"):
             try:
                 self.get(self.device, dev.name)
             except ObjectNotFound:
@@ -80,7 +80,7 @@ class NautobotAdapter(DiffSync):
 
     def load_ports(self):
         """Load Port data from Nautobot into DiffSync model."""
-        for intf in Interface.objects.filter(device__platform__name="Meraki"):
+        for intf in Interface.objects.filter(_custom_field_data__system_of_record="Meraki SSoT"):
             try:
                 self.get(self.port, {"name": intf.name, "device": intf.device.name})
             except ObjectNotFound:
