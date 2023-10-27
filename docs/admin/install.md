@@ -15,8 +15,7 @@ Here you will find detailed instructions on how to **install** and **configure**
 
 ### Access Requirements
 
-!!! warning "Developer Note - Remove Me!"
-    What external systems (if any) it needs access to in order to work.
+Access to the Meraki dashboard at https://dashboard.meraki.com from your Nautobot instance is required.
 
 ## Install Guide
 
@@ -44,11 +43,18 @@ Once installed, the plugin needs to be enabled in your Nautobot configuration. T
 # In your nautobot_config.py
 PLUGINS = ["nautobot_ssot", "nautobot_ssot_meraki"]
 
-# PLUGINS_CONFIG = {
-#   "nautobot_ssot_meraki": {
-#     ADD YOUR SETTINGS HERE
-#   }
-# }
+PLUGINS_CONFIG = {
+    "nautobot_ssot": {
+        "hide_example_jobs": True,
+    },
+    "nautobot_ssot_meraki": {
+        "meraki_org_id": os.getenv("MERAKI_ORG_ID", ""),
+        "meraki_token": os.getenv("MERAKI_TOKEN", ""),
+        "update_locations": is_truthy(os.getenv("NAUTOBOT_DNAC_SSOT_UPDATE_LOCATIONS", False)),
+        "hostname_mapping": [],
+        "devicetype_mapping": [],
+    },
+}
 ```
 
 Once the Nautobot configuration is updated, run the Post Upgrade command (`nautobot-server post_upgrade`) to run migrations and clear any cache:
@@ -74,8 +80,10 @@ sudo systemctl restart nautobot nautobot-worker nautobot-scheduler
 
 The plugin behavior can be controlled with the following list of settings:
 
-| Key     | Example | Default | Description                          |
-| ------- | ------ | -------- | ------------------------------------- |
-| `enable_backup` | `True` | `True` | A boolean to represent whether or not to run backup configurations within the plugin. |
-| `platform_slug_map` | `{"cisco_wlc": "cisco_aireos"}` | `None` | A dictionary in which the key is the platform slug and the value is what netutils uses in any "network_os" parameter. |
-| `per_feature_bar_width` | `0.15` | `0.15` | The width of the table bar within the overview report |
+| Key                  | Example                  | Default  | Description                                                                                  |
+| -------------------- | ------------------------ | -------- | -------------------------------------------------------------------------------------------- |
+| `meraki_org_id`      |      `12345`             |    ``    | A string representing the organization ID to use when querying the Meraki dashboard.         |
+| `meraki_token`       |      `123456abcde`       |    ``    | A string representing the authentication token to use querying the Meraki dashboard.         |
+| `update_locations`   |      True                |   False  | Boolean value to determine whether locations should be updated if found during a sync.       |
+| `hostname_mapping`   | [(".*FW.*", "Firewall")] |   []     | List of tuples containing a regex pattern to comparse hostname against and Role name.        |
+| `devicetype_mapping` |   [("MX", "Firewall")]   |   []     | List of tuples containing a model series, ie MR, and the defined Role name.                  |
