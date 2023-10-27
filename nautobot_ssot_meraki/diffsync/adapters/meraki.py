@@ -1,4 +1,5 @@
 """Nautobot SSoT for Meraki Adapter for Meraki SSoT plugin."""
+from django.conf import settings
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
 from netutils.ip import ipaddress_interface, netmask_to_cidr
@@ -9,7 +10,9 @@ from nautobot_ssot_meraki.diffsync.models.meraki import (
     MerakiPrefix,
     MerakiIPAddress,
 )
-from nautobot_ssot_meraki.utils.meraki import parse_hostname_for_role
+from nautobot_ssot_meraki.utils.meraki import parse_hostname_for_role, get_role_from_devicetype
+
+PLUGIN_CFG = settings.PLUGINS_CONFIG["nautobot_ssot_meraki"]
 
 
 class MerakiAdapter(DiffSync):
@@ -71,12 +74,20 @@ class MerakiAdapter(DiffSync):
                     self.get(self.device, dev["name"])
                     self.job.log_warning(message=f"Duplicate device {dev['name']} found and being skipped.")
                 except ObjectNotFound:
+                    if PLUGIN_CFG.get("hostname_mapping") and len(PLUGIN_CFG["hostname_mapping"]) > 0:
+                        print(f"Parsing hostname for device {dev['name']} to determine role.")
+                        role = parse_hostname_for_role(dev_hostname=dev["name"])
+                    elif PLUGIN_CFG.get("devicetype_mapping") and len(PLUGIN_CFG["devicetype_mapping"]) > 0:
+                        print(f"Parsing model for device {dev['name']} to determine role.")
+                        role = get_role_from_devicetype(dev_model=dev["model"])
+                    else:
+                        role = "Unknown"
                     new_dev = self.device(
                         name=dev["name"],
                         notes=dev["notes"],
                         serial=dev["serial"],
                         status=status,
-                        role=parse_hostname_for_role(dev_hostname=dev["name"]),
+                        role=role,
                         model=dev["model"],
                         network=self.conn.network_map[dev["networkId"]]["name"],
                         tenant=self.tenant.name if self.tenant else None,
