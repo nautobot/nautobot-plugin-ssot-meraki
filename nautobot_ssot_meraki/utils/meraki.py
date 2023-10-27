@@ -217,9 +217,24 @@ def parse_hostname_for_role(dev_hostname: str) -> str:
         str: Name of DeviceRole. Defaults to Unknown.
     """
     dev_role = "Unknown"
-    if PLUGIN_CFG.get("hostname_mapping"):
-        for entry in PLUGIN_CFG["hostname_mapping"]:
-            match = re.match(pattern=entry[0], string=dev_hostname)
-            if match:
-                dev_role = entry[1]
+    for entry in PLUGIN_CFG["hostname_mapping"]:
+        match = re.match(pattern=entry[0], string=dev_hostname)
+        if match:
+            dev_role = entry[1]
+    return dev_role
+
+
+def get_role_from_devicetype(dev_model: str) -> str:
+    """Get Device Role using DeviceType from devicetype_mapping Setting.
+
+    Args:
+        dev_model (str): Hardware model of Device to determine role of.
+
+    Returns:
+        str: Name of DeviceRole. Defaults to Unknown.
+    """
+    dev_role = "Unknown"
+    for entry in PLUGIN_CFG["devicetype_mapping"]:
+        if entry[0] in dev_model:
+            dev_role = entry[1]
     return dev_role
