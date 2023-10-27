@@ -70,11 +70,12 @@ class Prefix(DiffSyncModel):
 
     _modelname = "prefix"
     _identifiers = ("prefix", "location")
-    _attributes = ()
+    _attributes = ("tenant",)
     _children = {}
 
     prefix: str
     location: str
+    tenant: Optional[str]
 
     uuid: Optional[UUID]
 
