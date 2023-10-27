@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!--next-version-placeholder-->
 
+## v0.7.0 (2023-10-27)
+
+### Feature
+
+* ✨ Add Tenant to Prefix object and update CRUD functions. ([`3a5cc61`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/3a5cc619f00421d583d7f962bc1c1d1ca083f4bd))
+* ✨ Add ability to use Device model to determine DeviceRole. ([`729c666`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/729c6667d938dd7b1087bc4a8cc13edd7b623b94))
+
+### Fix
+
+* 🐛 Correct user definition for updating Notes on Device ([`d72c342`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/d72c34281aec9535cec186bfead47eca974dbc5b))
+
+### Documentation
+
+* 📝 Update documentation to add info about plugin settings and remove unnecessary bits. ([`13743d6`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/13743d6c5405f6d1ba50163d813cf8dc132557e5))
+
 ## v0.6.0 (2023-10-26)
 
 ### Feature
