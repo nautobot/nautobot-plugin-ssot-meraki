@@ -109,6 +109,7 @@ class NautobotAdapter(DiffSync):
                                 new_pf = self.prefix(
                                     prefix=str(pf_found.prefix),
                                     location=intf.device.site.name,
+                                    tenant=pf_found.tenant.name if pf_found.tenant else None,
                                     uuid=pf_found.id,
                                 )
                                 self.add(new_pf)

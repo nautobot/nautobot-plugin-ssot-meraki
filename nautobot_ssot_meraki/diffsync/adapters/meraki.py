@@ -256,6 +256,7 @@ class MerakiAdapter(DiffSync):
             new_pf = self.prefix(
                 prefix=prefix,
                 location=location,
+                tenant=self.tenant.name if self.tenant else None,
                 uuid=None,
             )
             self.add(new_pf)

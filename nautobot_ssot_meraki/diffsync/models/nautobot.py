@@ -212,10 +212,24 @@ class NautobotPrefix(Prefix):
     def create(cls, diffsync, ids, attrs):
         """Create Prefix in Nautobot from NautobotPrefix object."""
         new_pf = OrmPrefix.objects.create(
-            prefix=ids["prefix"], site=Site.objects.get(name=ids["location"]), status=Status.objects.get(name="Active")
+            prefix=ids["prefix"],
+            site=Site.objects.get(name=ids["location"]),
+            status=Status.objects.get(name="Active"),
+            tenant=Tenant.objects.get(name=attrs["tenant"]) if attrs.get("tenant") else None,
         )
         new_pf.validated_save()
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+
+    def update(self, attrs):
+        """Update Prefix in Nautobot from NautobotPrefix object."""
+        prefix = OrmPrefix.objects.get(id=self.uuid)
+        if "tenant" in attrs:
+            if attrs.get("tenant"):
+                prefix.tenant = Tenant.objects.get(name=attrs["tenant"])
+            else:
+                prefix.tenant = None
+        prefix.validated_save()
+        return super().update(attrs)
 
     def delete(self):
         """Delete Prefix in Nautobot from NautobotPrefix object."""
