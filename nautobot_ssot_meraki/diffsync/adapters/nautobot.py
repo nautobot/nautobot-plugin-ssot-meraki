@@ -52,7 +52,7 @@ class NautobotAdapter(DiffSync):
                 )
                 if site.notes:
                     note = site.notes.first()
-                    new_site.notes = note.note
+                    new_site.notes = note.note.rstrip()
                 self.add(new_site)
 
     def load_devices(self):
@@ -75,7 +75,7 @@ class NautobotAdapter(DiffSync):
                 )
                 if dev.notes:
                     note = dev.notes.first()
-                    new_dev.notes = note.note
+                    new_dev.notes = note.note.rstrip()
                 self.add(new_dev)
 
     def load_ports(self):
