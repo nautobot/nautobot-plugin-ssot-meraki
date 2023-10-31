@@ -51,7 +51,7 @@ class NautobotAdapter(DiffSync):
                     uuid=site.id,
                 )
                 if site.notes:
-                    note = site.notes.first()
+                    note = site.notes.last()
                     new_site.notes = note.note.rstrip()
                 self.add(new_site)
 
@@ -74,7 +74,7 @@ class NautobotAdapter(DiffSync):
                     version=dev._custom_field_data["os_version"] if dev._custom_field_data.get("os_version") else "",
                 )
                 if dev.notes:
-                    note = dev.notes.first()
+                    note = dev.notes.last()
                     new_dev.notes = note.note.rstrip()
                 self.add(new_dev)
 
