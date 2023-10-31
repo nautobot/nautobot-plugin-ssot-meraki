@@ -53,7 +53,7 @@ class MerakiAdapter(DiffSync):
                 new_network = self.network(
                     name=net["name"],
                     timezone=net["timeZone"],
-                    notes=net["notes"] if net.get("notes") else "",
+                    notes=net["notes"].rstrip() if net.get("notes") else "",
                     tags=net["tags"],
                     tenant=self.tenant.name if self.tenant else None,
                     uuid=None,
@@ -84,7 +84,7 @@ class MerakiAdapter(DiffSync):
                         role = "Unknown"
                     new_dev = self.device(
                         name=dev["name"],
-                        notes=dev["notes"],
+                        notes=dev["notes"].rstrip(),
                         serial=dev["serial"],
                         status=status,
                         role=role,
