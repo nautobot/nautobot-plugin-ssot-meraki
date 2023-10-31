@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!--next-version-placeholder-->
 
+## v0.7.1 (2023-10-31)
+
+### Fix
+
+* 🐛 Use last note, not first ([`e8d6245`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/e8d6245dc36ed5d1e7601d73d2b33fc3120d8371))
+* Add rstrip to Meraki adapter for notes ([`6e12056`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/6e12056f3a574cd5f89c873d313a843a188c9c35))
+* 🐛 Strip trailing new line from Notes so diff lines up. ([`f7121b9`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/f7121b976818dd2de50982543baa0d8596d20ace))
+
 ## v0.7.0 (2023-10-27)
 
 ### Feature
