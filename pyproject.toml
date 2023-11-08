@@ -17,10 +17,10 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.8, <3.12"
 # Used for local development
-nautobot = { version = "^1.6.0", optional = true }
+nautobot = { version = "^2.0.0" }
 meraki = "^1.37.2"
-nautobot-ssot = "^1.5.0"
-nautobot-device-lifecycle-mgmt = { version = "^1.0.2", optional = true }
+nautobot-ssot = "^2.0.0"
+nautobot-device-lifecycle-mgmt = { version = "^2.0.0", optional = true }
 
 [tool.poetry.dev-dependencies]
 bandit = "*"
@@ -100,7 +100,7 @@ notes = """,
 
 [tool.pylint-nautobot]
 supported_nautobot_versions = [
-    "1.6.0"
+    "2.0.0"
 ]
 
 [tool.pydocstyle]
