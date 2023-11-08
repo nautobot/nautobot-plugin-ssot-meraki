@@ -1,6 +1,7 @@
 """Jobs for Meraki SSoT integration."""
 from django.conf import settings
-from nautobot.extras.jobs import BooleanVar, Job, ObjectVar
+from nautobot.core.celery import register_jobs
+from nautobot.extras.jobs import BooleanVar, ObjectVar
 from nautobot.tenancy.models import Tenant
 from nautobot_ssot.jobs.base import DataSource
 from nautobot_ssot_meraki.diffsync.adapters import meraki, nautobot
@@ -12,7 +13,7 @@ PLUGIN_CFG = settings.PLUGINS_CONFIG["nautobot_ssot_meraki"]
 name = "Meraki SSoT"  # pylint: disable=invalid-name
 
 
-class MerakiDataSource(DataSource, Job):
+class MerakiDataSource(DataSource):
     """Meraki SSoT Data Source."""
 
     debug = BooleanVar(description="Enable for more verbose debug logging", default=False)
@@ -44,7 +45,7 @@ class MerakiDataSource(DataSource, Job):
     def load_source_adapter(self):
         """Load data from Meraki into DiffSync models."""
         client = DashboardClient(logger=self, org_id=PLUGIN_CFG["meraki_org_id"], token=PLUGIN_CFG["meraki_token"])
-        self.source_adapter = meraki.MerakiAdapter(job=self, sync=self.sync, client=client, tenant=self.data["tenant"])
+        self.source_adapter = meraki.MerakiAdapter(job=self, sync=self.sync, client=client, tenant=self.tenant)
         self.source_adapter.load()
 
     def load_target_adapter(self):
@@ -52,11 +53,14 @@ class MerakiDataSource(DataSource, Job):
         self.target_adapter = nautobot.NautobotAdapter(job=self, sync=self.sync)
         self.target_adapter.load()
 
-    def run(self, data, commit):
-        """Ensure Job form variables are set."""
-        self.commit = commit
-        self.data = data
-        super().run(data, commit)
+    def run(self, dryrun, memory_profiling, debug, tenant, *args, **kwargs):
+        """Perform data synchronization."""
+        self.dryrun = dryrun
+        self.memory_profiling = memory_profiling
+        self.debug = debug
+        self.tenant = tenant
+        super().run(dryrun - self.dryrun, memory_profiling=self.memory_profiling, *args, **kwargs)
 
 
 jobs = [MerakiDataSource]
+register_jobs(*jobs)
