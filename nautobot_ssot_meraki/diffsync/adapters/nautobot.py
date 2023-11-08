@@ -114,7 +114,7 @@ class NautobotAdapter(DiffSync):
                                 )
                                 self.add(new_pf)
                         else:
-                            self.job.log_warning(message=f"Unable to find prefix for IP Address {ipaddr.host}.")
+                            self.job.logger.warning(f"Unable to find prefix for IP Address {ipaddr.host}.")
                         new_ip = self.ipaddress(
                             address=str(ipaddr.address),
                             device=intf.device.name,

@@ -48,7 +48,7 @@ class MerakiAdapter(DiffSync):
         for net in self.conn.get_org_networks():
             try:
                 self.get(self.network, net["name"])
-                self.job.log_warning(message=f"Duplicate network {net['name']} found and being skipped.")
+                self.job.logger.warning(f"Duplicate network {net['name']} found and being skipped.")
             except ObjectNotFound:
                 new_network = self.network(
                     name=net["name"],
@@ -72,7 +72,7 @@ class MerakiAdapter(DiffSync):
                         status = "Active"
                 try:
                     self.get(self.device, dev["name"])
-                    self.job.log_warning(message=f"Duplicate device {dev['name']} found and being skipped.")
+                    self.job.logger.warning(f"Duplicate device {dev['name']} found and being skipped.")
                 except ObjectNotFound:
                     if PLUGIN_CFG.get("hostname_mapping") and len(PLUGIN_CFG["hostname_mapping"]) > 0:
                         print(f"Parsing hostname for device {dev['name']} to determine role.")
@@ -102,7 +102,7 @@ class MerakiAdapter(DiffSync):
                     if dev["model"].startswith("MR"):
                         self.load_ap_ports(device=new_dev, serial=dev["serial"])
             else:
-                self.job.log_warning(message=f"Device serial {dev['serial']} is missing hostname so will be skipped.")
+                self.job.logger.warning(f"Device serial {dev['serial']} is missing hostname so will be skipped.")
 
     def load_firewall_ports(self, device: MerakiDevice, serial: str, network_id: str):
         """Load ports of a firewall, cellular, or teleworker device from Meraki dashboard into DiffSync models."""
@@ -280,4 +280,4 @@ class MerakiAdapter(DiffSync):
             self.load_networks()
             self.load_devices()
         else:
-            self.job.log_failure(message="Specified organization ID not found in Meraki dashboard.")
+            self.job.log_failure("Specified organization ID not found in Meraki dashboard.")
