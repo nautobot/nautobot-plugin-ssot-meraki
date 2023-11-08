@@ -36,7 +36,7 @@ class DashboardClient:
             )
             return dashboard
         except meraki.APIError as err:
-            self.logger.log_failure(f"Unable to connect to Meraki dashboard: {err.message}")
+            self.logger.log.error(f"Unable to connect to Meraki dashboard: {err.message}")
             raise err
 
     def validate_organization_exists(self) -> bool:
@@ -62,8 +62,8 @@ class DashboardClient:
             networks = self.conn.organizations.getOrganizationNetworks(organizationId=self.org_id)
             self.network_map = {net["id"]: net for net in networks}
         except meraki.APIError as err:
-            self.logger.log_warning(
-                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            self.logger.logger.warning(
+                f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
         return networks
 
@@ -77,8 +77,8 @@ class DashboardClient:
         try:
             devices = self.conn.organizations.getOrganizationDevices(organizationId=self.org_id)
         except meraki.APIError as err:
-            self.logger.log_warning(
-                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            self.logger.logger.warning(
+                f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
         return devices
 
@@ -93,8 +93,8 @@ class DashboardClient:
             result = self.conn.organizations.getOrganizationUplinksStatuses(organizationId=self.org_id)
             settings_map = {net["serial"]: net for net in result}
         except meraki.APIError as err:
-            self.logger.log_warning(
-                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            self.logger.logger.warning(
+                f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
         return settings_map
 
@@ -109,8 +109,8 @@ class DashboardClient:
             result = self.conn.switch.getOrganizationSwitchPortsBySwitch(organizationId=self.org_id)
             port_map = {switch["serial"]: switch for switch in result}
         except meraki.APIError as err:
-            self.logger.log_warning(
-                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            self.logger.logger.warning(
+                f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
         return port_map
 
@@ -125,8 +125,8 @@ class DashboardClient:
             response = self.conn.organizations.getOrganizationDevicesStatuses(organizationId=self.org_id)
             statuses = {dev["name"]: dev["status"] for dev in response}
         except meraki.APIError as err:
-            self.logger.log_warning(
-                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            self.logger.logger.warning(
+                f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
         return statuses
 
@@ -145,8 +145,8 @@ class DashboardClient:
             if ports.get("ddnsHostnames"):
                 ports.pop("ddnsHostnames")
         except meraki.APIError as err:
-            self.logger.log_warning(
-                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            self.logger.logger.warning(
+                f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
         return ports
 
@@ -164,8 +164,8 @@ class DashboardClient:
             ports = self.conn.appliance.getDeviceApplianceUplinksSettings(serial=serial)
             ports = ports["interfaces"]
         except meraki.APIError as err:
-            self.logger.log_warning(
-                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            self.logger.logger.warning(
+                f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
         return ports
 
@@ -183,8 +183,8 @@ class DashboardClient:
             result = self.conn.switch.getDeviceSwitchPortsStatuses(serial=serial)
             port_statuses = {port["portId"]: port for port in result}
         except meraki.APIError as err:
-            self.logger.log_warning(
-                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            self.logger.logger.warning(
+                f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
         return port_statuses
 
@@ -201,8 +201,8 @@ class DashboardClient:
         try:
             ports = self.conn.appliance.getNetworkAppliancePorts(networkId=network_id)
         except meraki.APIError as err:
-            self.logger.log_warning(
-                message=f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
+            self.logger.logger.warning(
+                f"Meraki API error: {err}\nstatus code = {err.status}\nreason = {err.reason}\nerror = {err.message}"
             )
         return ports
 

@@ -53,8 +53,8 @@ def assign_version_to_device(diffsync, device, software_lcm):
         for relationship, queryset in relationships.items():
             if relationship == software_relation:
                 if diffsync.job.kwargs.get("debug"):
-                    diffsync.job.log_warning(
-                        message=f"Deleting Software Version Relationships for {device.name} to assign a new version."
+                    diffsync.job.logger.warning(
+                        f"Deleting Software Version Relationships for {device.name} to assign a new version."
                     )
                 queryset.delete()
 

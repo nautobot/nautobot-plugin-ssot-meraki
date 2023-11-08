@@ -35,8 +35,7 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         )
         self.nb_adapter = NautobotAdapter(job=job, sync=None)
         self.nb_adapter.job = MagicMock()
-        self.nb_adapter.job.log_info = MagicMock()
-        self.nb_adapter.job.log_warning = MagicMock()
+        self.nb_adapter.job.logger.warning = MagicMock()
 
         site1 = Site.objects.create(
             name="Lab",
