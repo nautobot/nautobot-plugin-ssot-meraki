@@ -7,7 +7,7 @@ from nautobot.extras.models import Note, Role
 from nautobot.ipam.models import IPAddress as OrmIPAddress
 from nautobot.ipam.models import Prefix as OrmPrefix
 from nautobot.ipam.models import IPAddressToInterface
-from nautobot_ssot_meraki.diffsync.models.base import Device, Network, Port, Prefix, IPAddress
+from nautobot_ssot_meraki.diffsync.models.base import Device, Hardware, Network, Port, Prefix, IPAddress
 from nautobot_ssot_meraki.utils.nautobot import add_software_lcm, assign_version_to_device
 
 try:
@@ -72,6 +72,25 @@ class NautobotNetwork(Network):
                 site.tenant = None
         site.validated_save()
         return super().update(attrs)
+
+
+class NautobotHardware(Hardware):
+    """Nautobot implementation of Hardware DiffSync model."""
+
+    @classmethod
+    def create(cls, diffsync, ids, attrs):
+        """Create DeviceType in Nautobot from NautobotHardware object."""
+        new_dt = DeviceType(model=ids["model"], manufacturer_id=diffsync.manufacturer_map["Cisco Meraki"])
+        diffsync.objects_to_create["devicetypes"].append(new_dt)
+        diffsync.devicetype_map[ids["model"]] = new_dt.id
+        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+
+    def delete(self):
+        """Delete DeviceType in Nautobot from NautobotHardware object."""
+        super().delete()
+        devicetype = DeviceType.objects.get(id=self.uuid)
+        self.diffsync.objects_to_delete["devicetypes"].append(devicetype)
+        return self
 
 
 class NautobotDevice(Device):
