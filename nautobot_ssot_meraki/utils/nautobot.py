@@ -65,6 +65,9 @@ def assign_version_to_device(diffsync, device, software_lcm):
         destination_type=ContentType.objects.get_for_model(Device),
         destination=device,
     )
+    diffsync.objects_to_create["relationship_assocs"].append(new_assoc)
+
+
 def get_dlc_version_map():
     """Method to create nested dictionary of Software versions mapped to their ID along with Platform.
 
