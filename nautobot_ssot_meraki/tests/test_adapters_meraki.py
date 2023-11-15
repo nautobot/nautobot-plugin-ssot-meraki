@@ -1,10 +1,8 @@
 """Test Meraki adapter."""
-import uuid
 from unittest.mock import MagicMock
 
-from django.contrib.contenttypes.models import ContentType
-from nautobot.extras.models import Job, JobResult
-from nautobot.utilities.testing import TransactionTestCase
+from nautobot.extras.models import JobResult
+from nautobot.core.testing import TransactionTestCase
 from nautobot_ssot_meraki.diffsync.adapters.meraki import MerakiAdapter
 from nautobot_ssot_meraki.jobs import MerakiDataSource
 from nautobot_ssot_meraki.tests.fixtures import fixtures as fix
@@ -32,7 +30,7 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.job = MerakiDataSource()
         self.job.log_warning = MagicMock()
         self.job.job_result = JobResult.objects.create(
-            name=self.job.class_path, obj_type=ContentType.objects.get_for_model(Job), user=None, job_id=uuid.uuid4()
+            name=self.job.class_path, task_name="fake task", worker="default"
         )
         self.meraki = MerakiAdapter(job=self.job, sync=None, client=self.meraki_client)
 
