@@ -1,7 +1,9 @@
 """Jobs for Meraki SSoT integration."""
 from django.conf import settings
 from nautobot.core.celery import register_jobs
+from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
 from nautobot.extras.jobs import BooleanVar, ObjectVar
+from nautobot.extras.models import SecretsGroup
 from nautobot.tenancy.models import Tenant
 from nautobot_ssot.jobs.base import DataSource
 from nautobot_ssot_meraki.diffsync.adapters import meraki, nautobot
@@ -16,6 +18,9 @@ name = "Meraki SSoT"  # pylint: disable=invalid-name
 class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attributes
     """Meraki SSoT Data Source."""
 
+    credentials = ObjectVar(
+        model=SecretsGroup, queryset=SecretsGroup.objects.all(), display_field="display_name", required=True
+    )
     debug = BooleanVar(description="Enable for more verbose debug logging", default=False)
     tenant = ObjectVar(model=Tenant, label="Tenant", required=False)
 
@@ -44,7 +49,16 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
 
     def load_source_adapter(self):
         """Load data from Meraki into DiffSync models."""
-        client = DashboardClient(logger=self, org_id=PLUGIN_CFG["meraki_org_id"], token=PLUGIN_CFG["meraki_token"])
+        _sg = self.credentials
+        org_id = _sg.get_secret_value(
+            access_type=SecretsGroupAccessTypeChoices.TYPE_HTTP,
+            secret_type=SecretsGroupSecretTypeChoices.TYPE_USERNAME,
+        )
+        token = _sg.get_secret_value(
+            access_type=SecretsGroupAccessTypeChoices.TYPE_HTTP,
+            secret_type=SecretsGroupSecretTypeChoices.TYPE_TOKEN,
+        )
+        client = DashboardClient(logger=self, org_id=org_id, token=token)
         self.source_adapter = meraki.MerakiAdapter(job=self, sync=self.sync, client=client, tenant=self.tenant)
         self.source_adapter.load()
 
@@ -53,10 +67,13 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         self.target_adapter = nautobot.NautobotAdapter(job=self, sync=self.sync)
         self.target_adapter.load()
 
-    def run(self, dryrun, memory_profiling, debug, tenant, *args, **kwargs):  # pylint: disable=arguments-differ
+    def run(
+        self, dryrun, memory_profiling, credentials, debug, tenant, *args, **kwargs
+    ):  # pylint: disable=arguments-differ, too-many-arguments
         """Perform data synchronization."""
         self.dryrun = dryrun
         self.memory_profiling = memory_profiling
+        self.credentials = credentials
         self.debug = debug
         self.tenant = tenant
         super().run(dryrun - self.dryrun, memory_profiling=self.memory_profiling, *args, **kwargs)
