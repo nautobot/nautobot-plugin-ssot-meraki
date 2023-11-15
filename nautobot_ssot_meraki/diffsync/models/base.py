@@ -69,11 +69,12 @@ class Prefix(DiffSyncModel):
     """DiffSync model for Meraki Prefixes."""
 
     _modelname = "prefix"
-    _identifiers = ("prefix", "location")
-    _attributes = ("tenant",)
+    _identifiers = ("prefix",)
+    _attributes = ("location", "namespace", "tenant")
     _children = {}
 
     prefix: str
+    namespace: str
     location: str
     tenant: Optional[str]
 

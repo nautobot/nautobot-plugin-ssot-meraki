@@ -13,7 +13,7 @@ PLUGIN_CFG = settings.PLUGINS_CONFIG["nautobot_ssot_meraki"]
 name = "Meraki SSoT"  # pylint: disable=invalid-name
 
 
-class MerakiDataSource(DataSource):
+class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attributes
     """Meraki SSoT Data Source."""
 
     debug = BooleanVar(description="Enable for more verbose debug logging", default=False)
@@ -53,7 +53,7 @@ class MerakiDataSource(DataSource):
         self.target_adapter = nautobot.NautobotAdapter(job=self, sync=self.sync)
         self.target_adapter.load()
 
-    def run(self, dryrun, memory_profiling, debug, tenant, *args, **kwargs):
+    def run(self, dryrun, memory_profiling, debug, tenant, *args, **kwargs):  # pylint: disable=arguments-differ
         """Perform data synchronization."""
         self.dryrun = dryrun
         self.memory_profiling = memory_profiling

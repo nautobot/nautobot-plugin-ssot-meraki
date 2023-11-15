@@ -20,7 +20,6 @@ def nautobot_database_ready_callback(sender, *, apps, **kwargs):  # pylint: disa
     plat_dict = {
         "name": "Meraki",
         "manufacturer": cisco_manu,
-        "slug": "meraki",
         "network_driver": "meraki",
     }
     Platform.objects.update_or_create(name__icontains="Meraki", defaults=plat_dict)
@@ -29,7 +28,7 @@ def nautobot_database_ready_callback(sender, *, apps, **kwargs):  # pylint: disa
         "type": CustomFieldTypeChoices.TYPE_TEXT,
         "label": "OS Version",
     }
-    ver_field, _ = CustomField.objects.get_or_create(name=os_cf_dict["key"], defaults=os_cf_dict)
+    ver_field, _ = CustomField.objects.get_or_create(key=os_cf_dict["key"], defaults=os_cf_dict)
     ver_field.content_types.add(ContentType.objects.get_for_model(Device))
 
     sor_cf_dict = {
@@ -37,13 +36,13 @@ def nautobot_database_ready_callback(sender, *, apps, **kwargs):  # pylint: disa
         "key": "system_of_record",
         "label": "System of Record",
     }
-    sor_custom_field, _ = CustomField.objects.update_or_create(name=sor_cf_dict["key"], defaults=sor_cf_dict)
+    sor_custom_field, _ = CustomField.objects.update_or_create(key=sor_cf_dict["key"], defaults=sor_cf_dict)
     sync_cf_dict = {
         "type": CustomFieldTypeChoices.TYPE_DATE,
         "key": "ssot_last_synchronized",
         "label": "Last sync from System of Record",
     }
-    sync_custom_field, _ = CustomField.objects.update_or_create(name=sync_cf_dict["key"], defaults=sync_cf_dict)
+    sync_custom_field, _ = CustomField.objects.update_or_create(key=sync_cf_dict["key"], defaults=sync_cf_dict)
     for model in [Device, Interface, IPAddress]:
         sor_custom_field.content_types.add(ContentType.objects.get_for_model(model))
         sync_custom_field.content_types.add(ContentType.objects.get_for_model(model))

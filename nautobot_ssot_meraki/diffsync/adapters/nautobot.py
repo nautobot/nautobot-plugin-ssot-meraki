@@ -2,8 +2,9 @@
 
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
-from nautobot.dcim.models import Device, Interface, Site
-from nautobot.ipam.models import Prefix
+from nautobot.dcim.models import Device, DeviceType, Interface, Location, LocationType, Manufacturer, Platform
+from nautobot.extras.models import Note, Relationship, RelationshipAssociation, Role, Status
+from nautobot.ipam.models import IPAddress, IPAddressToInterface, Namespace, Prefix
 from nautobot_ssot_meraki.diffsync.models.nautobot import (
     NautobotDevice,
     NautobotNetwork,
@@ -11,7 +12,7 @@ from nautobot_ssot_meraki.diffsync.models.nautobot import (
     NautobotPrefix,
     NautobotIPAddress,
 )
-from nautobot_ssot_meraki.utils.nautobot import get_tag_strings
+from nautobot_ssot_meraki.utils.nautobot import get_tag_strings, get_cf_version_map, get_dlc_version_map
 
 
 class NautobotAdapter(DiffSync):
@@ -38,7 +39,8 @@ class NautobotAdapter(DiffSync):
 
     def load_sites(self):
         """Load Site data from Nautobot into DiffSync model."""
-        for site in Site.objects.all():
+        site_type = LocationType.objects.get(name="Site")
+        for site in Location.objects.filter(location_type=site_type):
             try:
                 self.get(self.network, site.name)
             except ObjectNotFound:
@@ -65,10 +67,10 @@ class NautobotAdapter(DiffSync):
                     name=dev.name,
                     serial=dev.serial,
                     status=dev.status.name,
-                    role=dev.device_role.name,
+                    role=dev.role.name,
                     model=dev.device_type.model,
                     notes="",
-                    network=dev.site.name,
+                    network=dev.location.name,
                     tenant=dev.tenant.name if dev.tenant else None,
                     uuid=dev.id,
                     version=dev._custom_field_data["os_version"] if dev._custom_field_data.get("os_version") else "",
@@ -103,12 +105,13 @@ class NautobotAdapter(DiffSync):
                         if pf_found:
                             try:
                                 self.get(
-                                    self.prefix, {"prefix": str(pf_found.prefix), "location": intf.device.site.name}
+                                    self.prefix, {"prefix": str(pf_found.prefix), "namespace": pf_found.namespace.name}
                                 )
                             except ObjectNotFound:
                                 new_pf = self.prefix(
                                     prefix=str(pf_found.prefix),
-                                    location=intf.device.site.name,
+                                    location=pf_found.location.name,
+                                    namespace=pf_found.namespace.name,
                                     tenant=pf_found.tenant.name if pf_found.tenant else None,
                                     uuid=pf_found.id,
                                 )
@@ -120,7 +123,9 @@ class NautobotAdapter(DiffSync):
                             device=intf.device.name,
                             port=intf.name,
                             prefix=str(pf_found.prefix) if pf_found else "",
-                            primary=hasattr(ipaddr, "primary_ip4_for") or hasattr(ipaddr, "primary_ip6_for"),
+                            primary=bool(
+                                len(ipaddr.primary_ip4_for.all()) > 0 or len(ipaddr.primary_ip6_for.all()) > 0
+                            ),
                             tenant=intf.device.tenant.name if intf.device.tenant else None,
                             uuid=ipaddr.id,
                         )
