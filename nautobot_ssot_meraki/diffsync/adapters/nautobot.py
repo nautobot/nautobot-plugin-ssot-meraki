@@ -1,10 +1,13 @@
 """Nautobot Adapter for Meraki SSoT plugin."""
-
+from collections import defaultdict
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import ProtectedError
 from nautobot.dcim.models import Device, DeviceType, Interface, Location, LocationType, Manufacturer, Platform
 from nautobot.extras.models import Note, Relationship, RelationshipAssociation, Role, Status
 from nautobot.ipam.models import IPAddress, IPAddressToInterface, Namespace, Prefix
+from nautobot.tenancy.models import Tenant
 from nautobot_ssot_meraki.diffsync.models.nautobot import (
     NautobotDevice,
     NautobotHardware,
@@ -14,6 +17,15 @@ from nautobot_ssot_meraki.diffsync.models.nautobot import (
     NautobotIPAddress,
 )
 from nautobot_ssot_meraki.utils.nautobot import get_tag_strings, get_cf_version_map, get_dlc_version_map
+
+
+try:
+    import nautobot_device_lifecycle_mgmt  # noqa: F401
+
+    LIFECYCLE_MGMT = True
+except ImportError:
+    print("Device Lifecycle plugin isn't installed so will revert to CustomField for OS version.")
+    LIFECYCLE_MGMT = False
 
 
 class NautobotAdapter(DiffSync):
@@ -28,6 +40,22 @@ class NautobotAdapter(DiffSync):
 
     top_level = ["network", "hardware", "device", "prefix", "ipaddress"]
 
+    status_map = {}
+    tenant_map = {}
+    locationtype_map = {}
+    site_map = {}
+    platform_map = {}
+    manufacturer_map = {}
+    devicerole_map = {}
+    devicetype_map = {}
+    device_map = {}
+    port_map = {}
+    namespace_map = {}
+    prefix_map = {}
+    relationship_map = {}
+    contenttype_map = {}
+    version_map = {}
+
     def __init__(self, *args, job, sync=None, **kwargs):
         """Initialize Nautobot.
 
@@ -38,6 +66,8 @@ class NautobotAdapter(DiffSync):
         super().__init__(*args, **kwargs)
         self.job = job
         self.sync = sync
+        self.objects_to_create = defaultdict(list)
+        self.objects_to_delete = defaultdict(list)
 
     def load_sites(self):
         """Load Site data from Nautobot into DiffSync model."""
@@ -46,6 +76,7 @@ class NautobotAdapter(DiffSync):
             try:
                 self.get(self.network, site.name)
             except ObjectNotFound:
+                self.site_map[site.name] = site.id
                 new_site = self.network(
                     name=site.name,
                     notes="",
@@ -75,6 +106,8 @@ class NautobotAdapter(DiffSync):
             try:
                 self.get(self.device, dev.name)
             except ObjectNotFound:
+                self.device_map[dev.name] = dev.id
+                self.port_map[dev.name] = {}
                 new_dev = self.device(
                     name=dev.name,
                     serial=dev.serial,
@@ -98,6 +131,7 @@ class NautobotAdapter(DiffSync):
             try:
                 self.get(self.port, {"name": intf.name, "device": intf.device.name})
             except ObjectNotFound:
+                self.port_map[intf.device.name][intf.name] = intf.id
                 new_port = self.port(
                     name=intf.name,
                     device=intf.device.name,
@@ -128,6 +162,7 @@ class NautobotAdapter(DiffSync):
                                     uuid=pf_found.id,
                                 )
                                 self.add(new_pf)
+                                self.prefix_map[str(pf_found.prefix)] = pf_found.id
                         else:
                             self.job.logger.warning(f"Unable to find prefix for IP Address {ipaddr.host}.")
                         new_ip = self.ipaddress(
@@ -143,8 +178,100 @@ class NautobotAdapter(DiffSync):
                         )
                         self.add(new_ip)
 
+    def sync_complete(self, source: DiffSync, *args, **kwargs):
+        """Clean up function for DiffSync sync.
+
+        Once the sync is complete, this function runs deleting any objects
+        from Nautobot that need to be deleted in a specific order.
+
+        Args:
+            source (DiffSync): DiffSync
+        """
+        for grouping in (
+            "ipaddrs",
+            "prefixes",
+            "ports",
+            "devices",
+            "devicetypes",
+        ):
+            for nautobot_object in self.objects_to_delete[grouping]:
+                try:
+                    if self.job.debug:
+                        self.job.logger.info(f"Deleting {nautobot_object}.")
+                    nautobot_object.delete()
+                except ProtectedError:
+                    self.job.logger.warning(f"Deletion failed protected object: {nautobot_object}")
+            self.objects_to_delete[grouping] = []
+
+        if len(self.objects_to_create["devicetypes"]) > 0:
+            self.job.logger.info("Performing bulk create of DeviceTypes in Nautobot")
+            DeviceType.objects.bulk_create(self.objects_to_create["devicetypes"], batch_size=250)
+        if len(self.objects_to_create["devices"]) > 0:
+            self.job.logger.info("Performing bulk create of Devices in Nautobot")
+            Device.objects.bulk_create(self.objects_to_create["devices"], batch_size=250)
+        if len(self.objects_to_create["ports"]) > 0:
+            self.job.logger.info("Performing bulk create of Interfaces in Nautobot")
+            Interface.objects.bulk_create(self.objects_to_create["ports"], batch_size=250)
+        if len(self.objects_to_create["prefixes"]) > 0:
+            self.job.logger.info("Performing bulk create of Prefixes in Nautobot")
+            Prefix.objects.bulk_create(self.objects_to_create["prefixes"], batch_size=250)
+        if len(self.objects_to_create["ipaddrs"]) > 0:
+            self.job.logger.info("Performing bulk create of IP Addresses in Nautobot")
+            IPAddress.objects.bulk_create(self.objects_to_create["ipaddrs"], batch_size=250)
+        if len(self.objects_to_create["ipaddrs-to-prefixes"]) > 0:
+            self.job.logger.info("Assigning parent Prefix to IPAddresses with bulk_update.")
+            assigned_parents = []
+            for pair in self.objects_to_create["ipaddrs-to-prefixes"]:
+                ipaddr = pair[0]
+                ipaddr.parent_id = pair[1]
+                assigned_parents.append(ipaddr)
+            IPAddress.objects.bulk_update(assigned_parents, ["parent_id"], batch_size=250)
+        if len(self.objects_to_create["ipaddrs-to-intfs"]) > 0:
+            self.job.logger.info("Performing assignment of IPAddress to Port.")
+            IPAddressToInterface.objects.bulk_create(self.objects_to_create["ipaddrs-to-intfs"], batch_size=250)
+        if len(self.objects_to_create["device_primary_ip4"]) > 0:
+            self.job.logger.info("Performing bulk update of IPv4 addresses in Nautobot.")
+            device_primary_ip_objs = []
+            for d in self.objects_to_create["device_primary_ip4"]:
+                dev = Device.objects.get(id=d[0])
+                dev.primary_ip4_id = d[1]
+                device_primary_ip_objs.append(dev)
+            Device.objects.bulk_update(device_primary_ip_objs, ["primary_ip4_id"], batch_size=250)
+        if len(self.objects_to_create["device_primary_ip6"]) > 0:
+            self.job.logger.info("Performing bulk update of IPv6 addresses in Nautobot.")
+            device_primary_ip_objs = []
+            for d in self.objects_to_create["device_primary_ip6"]:
+                dev = Device.objects.get(id=d[0])
+                dev.primary_ip6_id = d[1]
+                device_primary_ip_objs.append(dev)
+            Device.objects.bulk_update(device_primary_ip_objs, ["primary_ip6_id"], batch_size=250)
+        if LIFECYCLE_MGMT:
+            if len(self.objects_to_create["relationship_assocs"]) > 0:
+                self.job.logger.info("Creating Relationships between Devices and Software Version")
+                RelationshipAssociation.objects.bulk_create(
+                    self.objects_to_create["relationship_assocs"], batch_size=250
+                )
+        if len(self.objects_to_create["notes"]) > 0:
+            self.job.logger.info("Performing bulk create of Notes in Nautobot")
+            Note.objects.bulk_create(self.objects_to_create["notes"], batch_size=250)
+        return super().sync_complete(source, *args, **kwargs)
+
     def load(self):
         """Load data from Nautobot into DiffSync models."""
+        self.status_map = {s.name: s.id for s in Status.objects.only("id", "name")}
+        self.locationtype_map = {lt.name: lt.id for lt in LocationType.objects.only("id", "name")}
+        self.platform_map = {p.name: p.id for p in Platform.objects.only("id", "name")}
+        self.manufacturer_map = {m.name: m.id for m in Manufacturer.objects.only("id", "name")}
+        self.devicerole_map = {d.name: d.id for d in Role.objects.only("id", "name")}
+        self.namespace_map = {ns.name: ns.id for ns in Namespace.objects.only("id", "name")}
+        self.relationship_map = {r.label: r.id for r in Relationship.objects.only("id", "label")}
+        self.contenttype_map = {c.model: c.id for c in ContentType.objects.only("id", "model")}
+        if LIFECYCLE_MGMT:
+            self.version_map = get_dlc_version_map()
+        else:
+            self.version_map = get_cf_version_map()
+        self.tenant_map = {t.name: t.id for t in Tenant.objects.only("id", "name")}
+
         self.load_sites()
         self.load_devicetypes()
         self.load_devices()
