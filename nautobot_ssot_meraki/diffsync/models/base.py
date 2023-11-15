@@ -24,6 +24,19 @@ class Network(DiffSyncModel):
     uuid: Optional[UUID]
 
 
+class Hardware(DiffSyncModel):
+    """DiffSync model for Meraki models."""
+
+    _modelname = "hardware"
+    _identifiers = ("model",)
+    _attributes = ()
+    _children = {}
+
+    model: str
+
+    uuid: Optional[UUID]
+
+
 class Device(DiffSyncModel):
     """DiffSync model for Meraki devices."""
 

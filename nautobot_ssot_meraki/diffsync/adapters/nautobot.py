@@ -7,6 +7,7 @@ from nautobot.extras.models import Note, Relationship, RelationshipAssociation, 
 from nautobot.ipam.models import IPAddress, IPAddressToInterface, Namespace, Prefix
 from nautobot_ssot_meraki.diffsync.models.nautobot import (
     NautobotDevice,
+    NautobotHardware,
     NautobotNetwork,
     NautobotPort,
     NautobotPrefix,
@@ -19,12 +20,13 @@ class NautobotAdapter(DiffSync):
     """DiffSync adapter for Nautobot."""
 
     network = NautobotNetwork
+    hardware = NautobotHardware
     device = NautobotDevice
     port = NautobotPort
     prefix = NautobotPrefix
     ipaddress = NautobotIPAddress
 
-    top_level = ["network", "device", "prefix", "ipaddress"]
+    top_level = ["network", "hardware", "device", "prefix", "ipaddress"]
 
     def __init__(self, *args, job, sync=None, **kwargs):
         """Initialize Nautobot.
@@ -56,6 +58,16 @@ class NautobotAdapter(DiffSync):
                     note = site.notes.last()
                     new_site.notes = note.note.rstrip()
                 self.add(new_site)
+
+    def load_devicetypes(self):
+        """Load DeviceType data from Nautobot into DiffSync model."""
+        for dt in DeviceType.objects.filter(manufacturer__name="Cisco Meraki"):
+            try:
+                self.get(self.hardware, dt.model)
+            except ObjectNotFound:
+                new_dt = self.hardware(model=dt.model, uuid=dt.id)
+                self.add(new_dt)
+                self.devicetype_map[dt.model] = dt.id
 
     def load_devices(self):
         """Load Device data from Nautobot into DiffSync model."""
@@ -134,5 +146,6 @@ class NautobotAdapter(DiffSync):
     def load(self):
         """Load data from Nautobot into DiffSync models."""
         self.load_sites()
+        self.load_devicetypes()
         self.load_devices()
         self.load_ports()

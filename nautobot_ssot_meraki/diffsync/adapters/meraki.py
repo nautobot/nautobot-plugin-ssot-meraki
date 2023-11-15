@@ -6,6 +6,7 @@ from netutils.ip import ipaddress_interface, netmask_to_cidr
 from nautobot_ssot_meraki.diffsync.models.meraki import (
     MerakiNetwork,
     MerakiDevice,
+    MerakiHardware,
     MerakiPort,
     MerakiPrefix,
     MerakiIPAddress,
@@ -19,12 +20,13 @@ class MerakiAdapter(DiffSync):
     """DiffSync adapter for Meraki."""
 
     network = MerakiNetwork
+    hardware = MerakiHardware
     device = MerakiDevice
     port = MerakiPort
     prefix = MerakiPrefix
     ipaddress = MerakiIPAddress
 
-    top_level = ["network", "device", "prefix", "ipaddress"]
+    top_level = ["network", "hardware", "device", "prefix", "ipaddress"]
 
     def __init__(self, job, sync, client, tenant=None, *args, **kwargs):
         """Initialize Meraki.
@@ -82,6 +84,7 @@ class MerakiAdapter(DiffSync):
                         role = get_role_from_devicetype(dev_model=dev["model"])
                     else:
                         role = "Unknown"
+                    self.load_hardware_model(device_info=dev)
                     new_dev = self.device(
                         name=dev["name"],
                         notes=dev["notes"].rstrip(),
@@ -103,6 +106,17 @@ class MerakiAdapter(DiffSync):
                         self.load_ap_ports(device=new_dev, serial=dev["serial"])
             else:
                 self.job.logger.warning(f"Device serial {dev['serial']} is missing hostname so will be skipped.")
+
+    def load_hardware_model(self, device_info: dict):
+        """Load hardware model from device information."""
+        try:
+            self.get(self.hardware, device_info["model"])
+        except ObjectNotFound:
+            new_hardware = self.hardware(
+                model=device_info["model"],
+                uuid=None,
+            )
+            self.add(new_hardware)
 
     def load_firewall_ports(self, device: MerakiDevice, serial: str, network_id: str):
         """Load ports of a firewall, cellular, or teleworker device from Meraki dashboard into DiffSync models."""
