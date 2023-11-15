@@ -145,38 +145,37 @@ class NautobotAdapter(DiffSync):
                 self.add(new_port)
                 dev = self.get(self.device, intf.device.name)
                 dev.add_child(new_port)
-                if len(intf.ip_addresses.all()) > 0:
-                    for ipaddr in intf.ip_addresses.all():
-                        pf_found = Prefix.objects.net_contains(ipaddr.host).last()
-                        if pf_found:
-                            try:
-                                self.get(
-                                    self.prefix, {"prefix": str(pf_found.prefix), "namespace": pf_found.namespace.name}
-                                )
-                            except ObjectNotFound:
-                                new_pf = self.prefix(
-                                    prefix=str(pf_found.prefix),
-                                    location=pf_found.location.name,
-                                    namespace=pf_found.namespace.name,
-                                    tenant=pf_found.tenant.name if pf_found.tenant else None,
-                                    uuid=pf_found.id,
-                                )
-                                self.add(new_pf)
-                                self.prefix_map[str(pf_found.prefix)] = pf_found.id
-                        else:
-                            self.job.logger.warning(f"Unable to find prefix for IP Address {ipaddr.host}.")
-                        new_ip = self.ipaddress(
-                            address=str(ipaddr.address),
-                            device=intf.device.name,
-                            port=intf.name,
-                            prefix=str(pf_found.prefix) if pf_found else "",
-                            primary=bool(
-                                len(ipaddr.primary_ip4_for.all()) > 0 or len(ipaddr.primary_ip6_for.all()) > 0
-                            ),
-                            tenant=intf.device.tenant.name if intf.device.tenant else None,
-                            uuid=ipaddr.id,
-                        )
-                        self.add(new_ip)
+
+    def load_prefixes(self):
+        """Load Prefixes from Nautobot into DiffSync models."""
+        for prefix in Prefix.objects.filter(_custom_field_data__system_of_record="Meraki SSoT"):
+            try:
+                self.get(self.prefix, {"prefix": str(prefix.prefix), "namespace": prefix.namespace.name})
+            except ObjectNotFound:
+                new_pf = self.prefix(
+                    prefix=str(prefix.prefix),
+                    location=prefix.location.name if prefix.location else "",
+                    namespace=prefix.namespace.name,
+                    tenant=prefix.tenant.name if prefix.tenant else None,
+                    uuid=prefix.id,
+                )
+                self.add(new_pf)
+                self.prefix_map[str(prefix.prefix)] = prefix.id
+
+    def load_ipaddresses(self):
+        """Load IPAddresses from Nautobot into DiffSync models."""
+        for ipaddr in IPAddress.objects.filter(_custom_field_data__system_of_record="Meraki SSoT"):
+            for intf in ipaddr.interfaces.all():
+                new_ip = self.ipaddress(
+                    address=str(ipaddr.address),
+                    device=intf.device.name,
+                    port=intf.name,
+                    prefix=str(ipaddr.parent.prefix) if ipaddr.parent else "",
+                    primary=bool(len(ipaddr.primary_ip4_for.all()) > 0 or len(ipaddr.primary_ip6_for.all()) > 0),
+                    tenant=intf.device.tenant.name if intf.device.tenant else None,
+                    uuid=ipaddr.id,
+                )
+                self.add(new_ip)
 
     def sync_complete(self, source: DiffSync, *args, **kwargs):
         """Clean up function for DiffSync sync.
@@ -276,3 +275,5 @@ class NautobotAdapter(DiffSync):
         self.load_devicetypes()
         self.load_devices()
         self.load_ports()
+        self.load_prefixes()
+        self.load_ipaddresses()
