@@ -10,11 +10,16 @@ def nautobot_database_ready_callback(sender, *, apps, **kwargs):  # pylint: disa
     # pylint: disable=invalid-name, too-many-locals
     ContentType = apps.get_model("contenttypes", "ContentType")
     CustomField = apps.get_model("extras", "CustomField")
+    LocationType = apps.get_model("dcim", "LocationType")
     Device = apps.get_model("dcim", "Device")
     Interface = apps.get_model("dcim", "Interface")
     IPAddress = apps.get_model("ipam", "IPAddress")
     Manufacturer = apps.get_model("dcim", "Manufacturer")
     Platform = apps.get_model("dcim", "Platform")
+
+    site = LocationType.objects.update_or_create(name="Site", nestable=True)[0]
+    site.content_types.add(ContentType.objects.get_for_model(Device))
+    site.content_types.add(ContentType.objects.get_for_model(Prefix))
 
     cisco_manu = Manufacturer.objects.get_or_create(name="Cisco Meraki")[0]
     plat_dict = {
