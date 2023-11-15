@@ -301,9 +301,9 @@ class NautobotIPAddress(IPAddress):
         new_ip.custom_field_data["system_of_record"] = "Meraki SSoT"
         new_ip.custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         diffsync.objects_to_create["ipaddrs"].append(new_ip)
-        if attrs.get("device") and attrs.get("port"):
+        if ids.get("device") and ids.get("port"):
             try:
-                intf = diffsync.port_map[attrs["device"]][attrs["port"]]
+                intf = diffsync.port_map[ids["device"]][ids["port"]]
                 ip_to_intf = IPAddressToInterface(ip_address_id=new_ip.id, interface_id=intf)
                 diffsync.objects_to_create["ipaddrs-to-intfs"].append(ip_to_intf)
                 if attrs.get("primary"):
@@ -316,23 +316,12 @@ class NautobotIPAddress(IPAddress):
                             (diffsync.device_map[attrs["device"]], new_ip.id)
                         )
             except NewDevice.DoesNotExist:
-                diffsync.job.logger.warning(f"Unable to find Device {attrs['device']} to assign {new_ip.address}.")
+                diffsync.job.logger.warning(f"Unable to find Device {ids['device']} to assign {new_ip.address}.")
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
     def update(self, attrs):
         """Update IPAddress in Nautobot from NautobotIPAddress object."""
         ip = OrmIPAddress.objects.get(id=self.uuid)
-        if "port" in attrs and "device" not in attrs:
-            intf = self.diffsync.port_map[self.device][attrs["port"]]
-            ip_to_intf = IPAddressToInterface(ip_address_id=ip.id, interface_id=intf)
-            self.diffsync.objects_to_create["ipaddrs-to-intfs"].append(ip_to_intf)
-        if "device" in attrs:
-            if attrs.get("port"):
-                intf = self.diffsync.port_map[attrs["device"]][attrs["port"]]
-            else:
-                intf = self.diffsync.port_map[attrs["device"]][self.port]
-            ip_to_intf = IPAddressToInterface(ip_address=ip.id, interface=intf)
-            self.diffsync.objects_to_create["ipaddrs-to-intfs"].append(ip_to_intf)
         if "primary" in attrs:
             if attrs.get("port"):
                 port = attrs["port"]
