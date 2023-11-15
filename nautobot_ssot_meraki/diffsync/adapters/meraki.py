@@ -250,12 +250,17 @@ class MerakiAdapter(DiffSync):
 
     def load_ipaddress(self, address: str, dev_name: str, location: str, port: str, prefix: str, primary: bool):
         """Load IPAddresses of devices into DiffSync models."""
+        if self.tenant:
+            namespace = self.tenant.name
+        else:
+            namespace = "Global"
         try:
-            self.get(self.prefix, {"prefix": prefix, "location": location})
+            self.get(self.prefix, {"prefix": prefix, "namespace": namespace})
         except ObjectNotFound:
             new_pf = self.prefix(
                 prefix=prefix,
                 location=location,
+                namespace=namespace,
                 tenant=self.tenant.name if self.tenant else None,
                 uuid=None,
             )

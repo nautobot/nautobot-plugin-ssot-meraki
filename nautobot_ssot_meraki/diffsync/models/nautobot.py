@@ -2,11 +2,11 @@
 from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
 from nautobot.dcim.models import Device as NewDevice
-from nautobot.dcim.models import Manufacturer, Site, DeviceRole, DeviceType, Interface, Platform
-from nautobot.extras.models import Note, Status
+from nautobot.dcim.models import DeviceType, Interface, Location
+from nautobot.extras.models import Note, Role
 from nautobot.ipam.models import IPAddress as OrmIPAddress
 from nautobot.ipam.models import Prefix as OrmPrefix
-from nautobot.tenancy.models import Tenant
+from nautobot.ipam.models import IPAddressToInterface
 from nautobot_ssot_meraki.diffsync.models.base import Device, Network, Port, Prefix, IPAddress
 from nautobot_ssot_meraki.utils.nautobot import add_software_lcm, assign_version_to_device
 
@@ -25,22 +25,24 @@ class NautobotNetwork(Network):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create Site in Nautobot from NautobotNetwork object."""
-        new_site = Site(
+        new_site = Location(
             name=ids["name"],
-            status=Status.objects.get(name="Active"),
+            location_type_id=diffsync.locationtype_map["Site"],
+            status_id=diffsync.status_map["Active"],
             time_zone=attrs["timezone"],
         )
-        new_site.validated_save()
         if attrs.get("notes"):
             new_note = Note(
                 note=attrs["notes"],
-                user=diffsync.job.request.user,
-                assigned_object_type=ContentType.objects.get_for_model(Site),
+                user=diffsync.job.user,
+                assigned_object_type_id=diffsync.contenttype_map["location"],
                 assigned_object_id=new_site.id,
             )
             new_note.validated_save()
         if attrs.get("tags"):
             new_site.tags.set(attrs["tags"])
+            for tag in new_site.tags.all():
+                tag.content_types.add(diffsync.contenttype_map["location"])
         if attrs.get("tenant"):
             new_site.tenant = Tenant.objects.get(name=attrs["tenant"])
         new_site.validated_save()
@@ -48,19 +50,21 @@ class NautobotNetwork(Network):
 
     def update(self, attrs):
         """Update Site in Nautobot from NautobotNetwork object."""
-        site = Site.objects.get(id=self.uuid)
+        site = Location.objects.get(id=self.uuid)
         if "timezone" in attrs:
             site.time_zone = attrs["timezone"]
         if attrs.get("notes"):
             new_note = Note(
                 note=attrs["notes"],
-                user=self.diffsync.job.request.user,
-                assigned_object_type=ContentType.objects.get_for_model(Site),
+                user=self.diffsync.job.user,
+                assigned_object_type_id=self.diffsync.contenttype_map["location"],
                 assigned_object_id=site.id,
             )
             new_note.validated_save()
         if "tags" in attrs:
             site.tags.set(attrs["tags"])
+            for tag in site.tags.all():
+                tag.content_types.add(self.diffsync.contenttype_map["location"])
         if "tenant" in attrs:
             if attrs.get("tenant"):
                 site.tenant = Tenant.objects.get(name=attrs["tenant"])
@@ -76,7 +80,10 @@ class NautobotDevice(Device):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create Device in Nautobot from NautobotDevice object."""
-        cisco_manu = Manufacturer.objects.get(name="Cisco Meraki")
+        dev_role, created = Role.objects.get_or_create(name=attrs["role"])
+        if created:
+            dev_role.content_types.add(diffsync.contenttype_map["device"])
+            diffsync.devicerole_map[attrs["role"]] = dev_role.id
         new_device = NewDevice(
             name=ids["name"],
             platform=Platform.objects.get(name="Meraki"),
@@ -90,13 +97,15 @@ class NautobotDevice(Device):
         if attrs.get("notes"):
             new_note = Note(
                 note=attrs["notes"],
-                user=diffsync.job.request.user,
-                assigned_object_type=ContentType.objects.get_for_model(NewDevice),
+                user=diffsync.job.user,
+                assigned_object_type_id=diffsync.contenttype_map["device"],
                 assigned_object_id=new_device.id,
             )
             new_note.validated_save()
         if attrs.get("tags"):
             new_device.tags.set(attrs["tags"])
+            for tag in new_device.tags.all():
+                tag.content_types.add(diffsync.contenttype_map["device"])
         if attrs.get("tenant"):
             if attrs.get("tenant"):
                 new_device.tenant = Tenant.objects.get(name=attrs["tenant"])
@@ -128,13 +137,15 @@ class NautobotDevice(Device):
         if attrs.get("notes"):
             new_note = Note(
                 note=attrs["notes"],
-                user=self.diffsync.job.request.user,
-                assigned_object_type=ContentType.objects.get_for_model(NewDevice),
+                user=self.diffsync.job.user,
+                assigned_object_type_id=self.diffsync.contenttype_map["device"],
                 assigned_object_id=device.id,
             )
             new_note.validated_save()
         if "tags" in attrs:
             device.tags.set(attrs["tags"])
+            for tag in device.tags.all():
+                tag.content_types.add(self.diffsync.contenttype_map["device"])
         if "tenant" in attrs:
             if attrs.get("tenant"):
                 device.tenant = Tenant.objects.get(name=attrs["tenant"])
@@ -164,7 +175,7 @@ class NautobotPort(Port):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create Interface in Nautobot from NautobotDevice object."""
-        new_port = Interface.objects.create(
+        new_port = Interface(
             name=ids["name"],
             device=NewDevice.objects.get(name=ids["device"]),
             enabled=attrs["enabled"],
@@ -211,7 +222,7 @@ class NautobotPrefix(Prefix):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create Prefix in Nautobot from NautobotPrefix object."""
-        new_pf = OrmPrefix.objects.create(
+        new_pf = OrmPrefix(
             prefix=ids["prefix"],
             site=Site.objects.get(name=ids["location"]),
             status=Status.objects.get(name="Active"),
@@ -223,6 +234,13 @@ class NautobotPrefix(Prefix):
     def update(self, attrs):
         """Update Prefix in Nautobot from NautobotPrefix object."""
         prefix = OrmPrefix.objects.get(id=self.uuid)
+        if "location" in attrs:
+            if attrs.get("location"):
+                prefix.location_id = self.diffsync.site_map[attrs["location"]]
+            else:
+                prefix.location = None
+        if "namespace" in attrs:
+            prefix.namespace_id = self.diffsync.namespace_map[attrs["namespace"]]
         if "tenant" in attrs:
             if attrs.get("tenant"):
                 prefix.tenant = Tenant.objects.get(name=attrs["tenant"])
@@ -245,7 +263,7 @@ class NautobotIPAddress(IPAddress):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create IPAddress in Nautobot from NautobotIPAddress object."""
-        new_ip = OrmIPAddress.objects.create(
+        new_ip = OrmIPAddress(
             address=ids["address"],
             status=Status.objects.get(name="Active"),
         )
