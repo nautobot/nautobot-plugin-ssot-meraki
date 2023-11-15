@@ -3,9 +3,10 @@ from unittest.mock import MagicMock
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from nautobot.core.testing import TransactionTestCase
 from nautobot.dcim.models import Device, DeviceType, Interface, Location, LocationType, Manufacturer, Platform
 from nautobot.extras.models import JobResult, Note, Role, Status
-from nautobot.core.testing import TransactionTestCase
+from nautobot.ipam.models import IPAddress, IPAddressToInterface, Namespace, Prefix
 
 from nautobot_ssot_meraki.diffsync.adapters.nautobot import NautobotAdapter
 from nautobot_ssot_meraki.jobs import MerakiDataSource
@@ -95,19 +96,16 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         lab01_mgmt.custom_field_data["system_of_record"] = "Meraki SSoT"
         lab01_mgmt.validated_save()
 
-        Prefix.objects.create(prefix="10.0.0.0/24", status=self.status_active)
-        IPAddress.objects.create(
-            address="10.0.0.1/24",
-            assigned_object=lab01_mgmt,
-            assigned_object_type=ContentType.objects.get_for_model(Interface),
-            status=self.status_active,
+        test_ns = Namespace.objects.create(name="Test")
+        lab_prefix = Prefix.objects.create(
+            prefix="10.0.0.0/24", location=site1, namespace=test_ns, status=self.status_active
         )
-        IPAddress.objects.create(
-            address="192.168.10.1/24",
-            assigned_object=lab01_mgmt,
-            assigned_object_type=ContentType.objects.get_for_model(Interface),
-            status=self.status_active,
-        )
+        lab01_mgmt_ip = IPAddress.objects.create(address="10.0.0.1/24", parent=lab_prefix, status=self.status_active)
+        lab_prefix.custom_field_data["system_of_record"] = "Meraki SSoT"
+        lab_prefix.validated_save()
+        lab01_mgmt_ip.custom_field_data["system_of_record"] = "Meraki SSoT"
+        lab01_mgmt_ip.validated_save()
+        IPAddressToInterface.objects.create(ip_address=lab01_mgmt_ip, interface=lab01_mgmt)
 
     def test_data_loading(self):
         """Test the load() function."""
@@ -122,10 +120,13 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         )
         self.assertEqual({"wan1__Lab01"}, {port.get_unique_id() for port in self.nb_adapter.get_all("port")})
         self.assertEqual(
-            {"10.0.0.0/24__Lab"},
+            {str(pf.prefix) for pf in Prefix.objects.all()},
             {pf.get_unique_id() for pf in self.nb_adapter.get_all("prefix")},
         )
         self.assertEqual(
-            {"10.0.0.1/24__10.0.0.0/24", "192.168.10.1/24__"},
-            {ip.get_unique_id() for ip in self.nb_adapter.get_all("ipaddress")},
+            {
+                f"{ipaddr.ip_address.address}__{ipaddr.interface.device.name}__{ipaddr.interface.name}"
+                for ipaddr in IPAddressToInterface.objects.all()
+            },
+            {ipaddr.get_unique_id() for ipaddr in self.nb_adapter.get_all("ipaddress")},
         )
