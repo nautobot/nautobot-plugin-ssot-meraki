@@ -46,13 +46,13 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         site1.validated_save()
         site1.tags.set(["Test"])
         site1.validated_save()
-        new_note = Note.objects.create(
+        site_note = Note.objects.create(
             note="Test",
             user=User.objects.first(),
             assigned_object_type=ContentType.objects.get_for_model(Site),
             assigned_object_id=site1.id,
         )
-        new_note.validated_save()
+        site_note.validated_save()
 
         cisco_manu = Manufacturer.objects.get(name="Cisco Meraki")
         cisco_manu.validated_save()
@@ -76,6 +76,13 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         lab01.validated_save()
         lab01.custom_field_data["system_of_record"] = "Meraki SSoT"
         lab01.validated_save()
+        lab01_note = Note.objects.create(
+            note="Lab01 Test Note",
+            user=User.objects.first(),
+            assigned_object_type=ContentType.objects.get_for_model(Device),
+            assigned_object_id=lab01.id,
+        )
+        lab01_note.validated_save()
 
         lab01_mgmt = Interface.objects.create(
             name="wan1",
