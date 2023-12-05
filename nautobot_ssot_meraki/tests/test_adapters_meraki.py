@@ -88,3 +88,13 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.job.log_warning.assert_called()
         self.job.log_warning.calls[0].contains(message="Duplicate network Lab found and being skipped.")
         self.job.log_warning.calls[1].contains(message="Duplicate network HQ found and being skipped.")
+
+    def test_duplicate_device_loading_error(self):
+        """Validate error thrown when duplicate device attempts to be loaded."""
+        self.meraki.load_devices()
+        self.meraki.load_devices()
+        self.job.log_warning.assert_called()
+        self.job.log_warning.calls[0].contains(message="Duplicate device Lab01 found and being skipped.")
+        self.job.log_warning.calls[1].contains(message="Duplicate device HQ01 found and being skipped.")
+        self.job.log_warning.calls[2].contains(message="Duplicate device Lab Switch found and being skipped.")
+        self.job.log_warning.calls[3].contains(message="Duplicate device HQ AP found and being skipped.")
