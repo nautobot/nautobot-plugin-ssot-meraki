@@ -104,6 +104,12 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
             assigned_object_type=ContentType.objects.get_for_model(Interface),
             status=self.status_active,
         )
+        IPAddress.objects.create(
+            address="192.168.10.1/24",
+            assigned_object=lab01_mgmt,
+            assigned_object_type=ContentType.objects.get_for_model(Interface),
+            status=self.status_active,
+        )
 
     def test_data_loading(self):
         """Test the load() function."""
@@ -122,6 +128,6 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
             {pf.get_unique_id() for pf in self.nb_adapter.get_all("prefix")},
         )
         self.assertEqual(
-            {"10.0.0.1/24__10.0.0.0/24__Lab01__wan1"},
+            {"10.0.0.1/24__10.0.0.0/24__Lab01__wan1", "192.168.10.1/24____Lab01__wan1"},
             {ip.get_unique_id() for ip in self.nb_adapter.get_all("ipaddress")},
         )
