@@ -30,6 +30,7 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.meraki_client.get_org_switchports.return_value = fix.GET_ORG_SWITCHPORTS_RECV_FIXTURE
 
         self.job = MerakiDataSource()
+        self.job.log_warning = MagicMock()
         self.job.job_result = JobResult.objects.create(
             name=self.job.class_path, obj_type=ContentType.objects.get_for_model(Job), user=None, job_id=uuid.uuid4()
         )
@@ -79,3 +80,11 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
             },
             {ip.get_unique_id() for ip in self.meraki.get_all("ipaddress")},
         )
+
+    def test_duplicate_network_loading_error(self):
+        """Validate error thrown when duplicate network attempts to be loaded."""
+        self.meraki.load_networks()
+        self.meraki.load_networks()
+        self.job.log_warning.assert_called()
+        self.job.log_warning.calls[0].contains(message="Duplicate network Lab found and being skipped.")
+        self.job.log_warning.calls[1].contains(message="Duplicate network HQ found and being skipped.")
