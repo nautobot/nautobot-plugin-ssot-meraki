@@ -67,3 +67,15 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
                 lan_ports.append(f"{port['portId']}__Lab Switch")
         expected_ports = set(wan1_ports + wan2_ports + lan_ports)
         self.assertEqual(expected_ports, {port.get_unique_id() for port in self.meraki.get_all("port")})
+        self.assertEqual(
+            {"10.1.15.0/24__Lab", "10.1.15.0/24__HQ"}, {pf.get_unique_id() for pf in self.meraki.get_all("prefix")}
+        )
+        self.assertEqual(
+            {
+                "10.1.15.10/24__10.1.15.0/24__Lab Switch__wan1",
+                "10.1.15.34/24__10.1.15.0/24__Lab01__wan1",
+                "10.1.15.34/24__10.1.15.0/24__HQ01__wan1",
+                "10.1.15.10/24__10.1.15.0/24__HQ AP__wan1",
+            },
+            {ip.get_unique_id() for ip in self.meraki.get_all("ipaddress")},
+        )
