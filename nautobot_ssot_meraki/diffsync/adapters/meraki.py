@@ -261,7 +261,7 @@ class MerakiAdapter(DiffSync):
             )
             self.add(new_pf)
         try:
-            self.get(self.ipaddress, {"address": address, "prefix": prefix, "device": dev_name, "port": port})
+            self.get(self.ipaddress, {"address": address, "prefix": prefix})
         except ObjectNotFound:
             new_ip = self.ipaddress(
                 address=address,

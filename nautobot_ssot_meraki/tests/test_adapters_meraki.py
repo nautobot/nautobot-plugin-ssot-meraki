@@ -73,10 +73,8 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         )
         self.assertEqual(
             {
-                "10.1.15.10/24__10.1.15.0/24__Lab Switch__wan1",
-                "10.1.15.34/24__10.1.15.0/24__Lab01__wan1",
-                "10.1.15.34/24__10.1.15.0/24__HQ01__wan1",
-                "10.1.15.10/24__10.1.15.0/24__HQ AP__wan1",
+                "10.1.15.10/24__10.1.15.0/24",
+                "10.1.15.34/24__10.1.15.0/24",
             },
             {ip.get_unique_id() for ip in self.meraki.get_all("ipaddress")},
         )
