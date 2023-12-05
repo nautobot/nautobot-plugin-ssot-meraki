@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from nautobot.dcim.models import Device, DeviceType, DeviceRole, Interface, Manufacturer, Platform, Site
 from nautobot.extras.models import Job, JobResult, Note, Status
+from nautobot.ipam.models import IPAddress, Prefix
 from nautobot.utilities.testing import TransactionTestCase
 
 from nautobot_ssot_meraki.diffsync.adapters.nautobot import NautobotAdapter
@@ -45,13 +46,13 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         site1.validated_save()
         site1.tags.set(["Test"])
         site1.validated_save()
-        new_note = Note.objects.create(
+        site_note = Note.objects.create(
             note="Test",
             user=User.objects.first(),
             assigned_object_type=ContentType.objects.get_for_model(Site),
             assigned_object_id=site1.id,
         )
-        new_note.validated_save()
+        site_note.validated_save()
 
         cisco_manu = Manufacturer.objects.get(name="Cisco Meraki")
         cisco_manu.validated_save()
@@ -75,6 +76,13 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         lab01.validated_save()
         lab01.custom_field_data["system_of_record"] = "Meraki SSoT"
         lab01.validated_save()
+        lab01_note = Note.objects.create(
+            note="Lab01 Test Note",
+            user=User.objects.first(),
+            assigned_object_type=ContentType.objects.get_for_model(Device),
+            assigned_object_id=lab01.id,
+        )
+        lab01_note.validated_save()
 
         lab01_mgmt = Interface.objects.create(
             name="wan1",
@@ -89,6 +97,20 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         lab01_mgmt.custom_field_data["system_of_record"] = "Meraki SSoT"
         lab01_mgmt.validated_save()
 
+        Prefix.objects.create(prefix="10.0.0.0/24", status=self.status_active)
+        IPAddress.objects.create(
+            address="10.0.0.1/24",
+            assigned_object=lab01_mgmt,
+            assigned_object_type=ContentType.objects.get_for_model(Interface),
+            status=self.status_active,
+        )
+        IPAddress.objects.create(
+            address="192.168.10.1/24",
+            assigned_object=lab01_mgmt,
+            assigned_object_type=ContentType.objects.get_for_model(Interface),
+            status=self.status_active,
+        )
+
     def test_data_loading(self):
         """Test the load() function."""
         self.nb_adapter.load()
@@ -101,3 +123,11 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
             {dev.get_unique_id() for dev in self.nb_adapter.get_all("device")},
         )
         self.assertEqual({"wan1__Lab01"}, {port.get_unique_id() for port in self.nb_adapter.get_all("port")})
+        self.assertEqual(
+            {"10.0.0.0/24__Lab"},
+            {pf.get_unique_id() for pf in self.nb_adapter.get_all("prefix")},
+        )
+        self.assertEqual(
+            {"10.0.0.1/24__10.0.0.0/24", "192.168.10.1/24__"},
+            {ip.get_unique_id() for ip in self.nb_adapter.get_all("ipaddress")},
+        )

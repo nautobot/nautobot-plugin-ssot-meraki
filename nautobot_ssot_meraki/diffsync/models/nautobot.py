@@ -269,7 +269,7 @@ class NautobotIPAddress(IPAddress):
                         dev.primary_ip6 = new_ip
                 dev.validated_save()
             except NewDevice.DoesNotExist:
-                diffsync.job.log_warning(message=f"Unable to find Device {attrs['device']} to assign {new_ip.address}.")
+                diffsync.job.log_warning(message=f"Unable to find Device {ids['device']} to assign {new_ip.address}.")
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
     def update(self, attrs):

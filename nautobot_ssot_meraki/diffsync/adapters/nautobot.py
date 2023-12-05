@@ -118,7 +118,6 @@ class NautobotAdapter(DiffSync):
                         new_ip = self.ipaddress(
                             address=str(ipaddr.address),
                             device=intf.device.name,
-                            location=intf.device.site.name,
                             port=intf.name,
                             prefix=str(pf_found.prefix) if pf_found else "",
                             primary=hasattr(ipaddr, "primary_ip4_for") or hasattr(ipaddr, "primary_ip6_for"),
