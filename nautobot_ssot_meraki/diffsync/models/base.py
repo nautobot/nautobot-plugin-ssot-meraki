@@ -84,8 +84,8 @@ class IPAddress(DiffSyncModel):
     """DiffSync model for Meraki IP Addresses."""
 
     _modelname = "ipaddress"
-    _identifiers = ("address", "prefix", "device", "port")
-    _attributes = ("primary", "tenant")
+    _identifiers = ("address", "prefix")
+    _attributes = ("device", "port", "primary", "tenant")
     _children = {}
 
     address: str

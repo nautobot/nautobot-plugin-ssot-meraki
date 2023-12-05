@@ -128,6 +128,6 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
             {pf.get_unique_id() for pf in self.nb_adapter.get_all("prefix")},
         )
         self.assertEqual(
-            {"10.0.0.1/24__10.0.0.0/24__Lab01__wan1", "192.168.10.1/24____Lab01__wan1"},
+            {"10.0.0.1/24__10.0.0.0/24", "192.168.10.1/24__"},
             {ip.get_unique_id() for ip in self.nb_adapter.get_all("ipaddress")},
         )
