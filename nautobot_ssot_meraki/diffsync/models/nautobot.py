@@ -254,10 +254,10 @@ class NautobotIPAddress(IPAddress):
         new_ip.custom_field_data["system_of_record"] = "Meraki SSoT"
         new_ip.custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         new_ip.validated_save()
-        if attrs.get("device") and attrs.get("port"):
+        if ids.get("device") and ids.get("port"):
             try:
-                dev = NewDevice.objects.get(name=attrs["device"])
-                intf = Interface.objects.get(name=attrs["port"], device=dev)
+                dev = NewDevice.objects.get(name=ids["device"])
+                intf = Interface.objects.get(name=ids["port"], device=dev)
                 new_ip.assigned_object_type = ContentType.objects.get_for_model(Interface)
                 new_ip.assigned_object_id = intf.id
                 new_ip.validated_save()
@@ -269,22 +269,12 @@ class NautobotIPAddress(IPAddress):
                         dev.primary_ip6 = new_ip
                 dev.validated_save()
             except NewDevice.DoesNotExist:
-                diffsync.job.log_warning(message=f"Unable to find Device {attrs['device']} to assign {new_ip.address}.")
+                diffsync.job.log_warning(message=f"Unable to find Device {ids['device']} to assign {new_ip.address}.")
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
     def update(self, attrs):
         """Update IPAddress in Nautobot from NautobotIPAddress object."""
         ip = OrmIPAddress.objects.get(id=self.uuid)
-        if "port" in attrs and "device" not in attrs:
-            intf = Interface.objects.get(name=attrs["port"], device=NewDevice.objects.get(name=self.device))
-            intf.assigned_object_id = ip.id
-            intf.validated_save()
-        if "device" in attrs:
-            dev = NewDevice.objects.get(name=attrs["device"])
-            if attrs.get("port"):
-                intf = Interface.objects.get(name=attrs["port"], device=dev)
-                intf.assigned_object_id = ip.id
-                intf.validated_save()
         if "primary" in attrs:
             dev = ip.assigned_object.device
             if ip.family == 4:
