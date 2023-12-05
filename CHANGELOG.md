@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!--next-version-placeholder-->
 
+## v0.7.2 (2023-12-05)
+
+### Fix
+
+* 🐛 Refactor IPAddress DiffSyncModel to avoid duplicates. ([`4b5900d`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/4b5900df39712652c833c5401b8f3d79a8748d98))
+
 ## v0.7.1 (2023-10-31)
 
 ### Fix
