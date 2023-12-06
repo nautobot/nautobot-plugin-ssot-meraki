@@ -15,6 +15,7 @@ from nautobot_ssot_meraki.diffsync.models.nautobot import (
     NautobotPort,
     NautobotPrefix,
     NautobotIPAddress,
+    NautobotIPAssignment,
 )
 from nautobot_ssot_meraki.utils.nautobot import get_tag_strings, get_cf_version_map, get_dlc_version_map
 
@@ -37,8 +38,9 @@ class NautobotAdapter(DiffSync):
     port = NautobotPort
     prefix = NautobotPrefix
     ipaddress = NautobotIPAddress
+    ipassignment = NautobotIPAssignment
 
-    top_level = ["network", "hardware", "device", "prefix", "ipaddress"]
+    top_level = ["network", "hardware", "device", "prefix", "ipaddress", "ipassignment"]
 
     status_map = {}
     tenant_map = {}
@@ -168,14 +170,27 @@ class NautobotAdapter(DiffSync):
             for intf in ipaddr.interfaces.all():
                 new_ip = self.ipaddress(
                     address=str(ipaddr.address),
-                    device=intf.device.name,
-                    port=intf.name,
                     prefix=str(ipaddr.parent.prefix) if ipaddr.parent else "",
-                    primary=bool(len(ipaddr.primary_ip4_for.all()) > 0 or len(ipaddr.primary_ip6_for.all()) > 0),
                     tenant=intf.device.tenant.name if intf.device.tenant else None,
                     uuid=ipaddr.id,
                 )
                 self.add(new_ip)
+
+    def load_ipassignments(self):
+        """Load IPAddressToInterface from Nautobot into DiffSync models."""
+        for ipassignment in IPAddressToInterface.objects.filter(
+            ip_address___custom_field_data__system_of_record="Meraki SSoT"
+        ):
+            new_map = self.ipassignment(
+                address=str(ipassignment.ip_address.address),
+                namespace=ipassignment.ip_address.parent.namespace.name,
+                device=ipassignment.interface.device.name,
+                port=ipassignment.interface.name,
+                primary=len(ipassignment.ip_address.primary_ip4_for.all()) > 0
+                or len(ipassignment.ip_address.primary_ip6_for.all()) > 0,
+                uuid=ipassignment.id,
+            )
+            self.add(new_map)
 
     def sync_complete(self, source: DiffSync, *args, **kwargs):
         """Clean up function for DiffSync sync.
@@ -277,3 +292,4 @@ class NautobotAdapter(DiffSync):
         self.load_ports()
         self.load_prefixes()
         self.load_ipaddresses()
+        self.load_ipassignments()

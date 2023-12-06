@@ -10,6 +10,7 @@ from nautobot_ssot_meraki.diffsync.models.meraki import (
     MerakiPort,
     MerakiPrefix,
     MerakiIPAddress,
+    MerakiIPAssignment,
 )
 from nautobot_ssot_meraki.utils.meraki import parse_hostname_for_role, get_role_from_devicetype
 
@@ -25,8 +26,9 @@ class MerakiAdapter(DiffSync):
     port = MerakiPort
     prefix = MerakiPrefix
     ipaddress = MerakiIPAddress
+    ipassignment = MerakiIPAssignment
 
-    top_level = ["network", "hardware", "device", "prefix", "ipaddress"]
+    top_level = ["network", "hardware", "device", "prefix", "ipaddress", "ipassignment"]
 
     def __init__(self, job, sync, client, tenant=None, *args, **kwargs):
         """Initialize Meraki.
@@ -153,11 +155,10 @@ class MerakiAdapter(DiffSync):
                     port_svis = port_uplink_settings["svis"]["ipv4"]
                     prefix = ipaddress_interface(ip=port_svis["address"], attr="network.with_prefixlen")
                     self.load_ipaddress(
+                    self.load_ipassignment(
                         address=port_svis["address"],
                         dev_name=device.name,
-                        location=self.conn.network_map[network_id]["name"],
                         port=port,
-                        prefix=prefix,
                         primary=bool(uplink_status == "Active" and not primary_found),
                     )
                 if uplink_status == "Active":
@@ -206,11 +207,10 @@ class MerakiAdapter(DiffSync):
                         attr="network.with_prefixlen",
                     )
                     self.load_ipaddress(
+                    self.load_ipassignment(
                         address=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(mgmt_ports[port]['staticSubnetMask'])}",
                         dev_name=device.name,
-                        location=self.conn.network_map[self.device_map[device.name]["networkId"]]["name"],
                         port=port,
-                        prefix=prefix,
                         primary=True,
                     )
         if serial in org_switchports:
@@ -254,11 +254,10 @@ class MerakiAdapter(DiffSync):
                         attr="network.with_prefixlen",
                     )
                     self.load_ipaddress(
+                    self.load_ipassignment(
                         address=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(mgmt_ports[port]['staticSubnetMask'])}",
                         dev_name=device.name,
-                        location=self.conn.network_map[self.device_map[device.name]["networkId"]]["name"],
                         port=port,
-                        prefix=prefix,
                         primary=True,
                     )
 
@@ -284,14 +283,26 @@ class MerakiAdapter(DiffSync):
         except ObjectNotFound:
             new_ip = self.ipaddress(
                 address=address,
-                device=dev_name,
-                port=port,
                 prefix=prefix,
-                primary=primary,
                 tenant=self.tenant.name if self.tenant else None,
                 uuid=None,
             )
             self.add(new_ip)
+
+    def load_ipassignment(self, address: str, dev_name: str, port: str, primary: bool):
+        """Load IPAddressesToInterface of devices into DiffSync models."""
+        try:
+            self.get(self.ipassignment, {"address": address, "device": dev_name, "port": port})
+        except ObjectNotFound:
+            new_map = self.ipassignment(
+                address=address,
+                namespace=self.tenant.name if self.tenant else "Global",
+                device=dev_name,
+                port=port,
+                primary=primary,
+                uuid=None,
+            )
+            self.add(new_map)
 
     def load(self):
         """Load data from Meraki into DiffSync models."""

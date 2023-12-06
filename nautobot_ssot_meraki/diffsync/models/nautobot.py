@@ -6,7 +6,7 @@ from nautobot.extras.models import Note, Role
 from nautobot.ipam.models import IPAddress as OrmIPAddress
 from nautobot.ipam.models import Prefix as OrmPrefix
 from nautobot.ipam.models import IPAddressToInterface
-from nautobot_ssot_meraki.diffsync.models.base import Device, Hardware, Network, Port, Prefix, IPAddress
+from nautobot_ssot_meraki.diffsync.models.base import Device, Hardware, Network, Port, Prefix, IPAddress, IPAssignment
 from nautobot_ssot_meraki.utils.nautobot import add_software_lcm, assign_version_to_device
 
 try:
@@ -301,55 +301,14 @@ class NautobotIPAddress(IPAddress):
         new_ip.custom_field_data["system_of_record"] = "Meraki SSoT"
         new_ip.custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         diffsync.objects_to_create["ipaddrs"].append(new_ip)
-        if ids.get("device") and ids.get("port"):
-            try:
-                intf = diffsync.port_map[ids["device"]][ids["port"]]
-                ip_to_intf = IPAddressToInterface(ip_address_id=new_ip.id, interface_id=intf)
-                diffsync.objects_to_create["ipaddrs-to-intfs"].append(ip_to_intf)
-                if attrs.get("primary"):
-                    if new_ip.ip_version == 4:
-                        diffsync.objects_to_create["device_primary_ip4"].append(
-                            (diffsync.device_map[attrs["device"]], new_ip.id)
-                        )
-                    else:
-                        diffsync.objects_to_create["device_primary_ip6"].append(
-                            (diffsync.device_map[attrs["device"]], new_ip.id)
-                        )
-            except NewDevice.DoesNotExist:
-                diffsync.job.logger.warning(f"Unable to find Device {ids['device']} to assign {new_ip.address}.")
+        if attrs["tenant"] not in diffsync.ipaddr_map:
+            diffsync.ipaddr_map[attrs["tenant"]] = {}
+        diffsync.ipaddr_map[attrs["tenant"]][ids["address"]] = new_ip.id
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
     def update(self, attrs):
         """Update IPAddress in Nautobot from NautobotIPAddress object."""
         ip = OrmIPAddress.objects.get(id=self.uuid)
-        if "primary" in attrs:
-            if attrs.get("port"):
-                port = attrs["port"]
-            else:
-                port = self.port
-            if attrs.get("device"):
-                device = attrs["device"]
-            else:
-                device = self.device
-            intf = self.diffsync.port_map[device][port]
-            if ip.ip_version == 4:
-                if not attrs["primary"]:
-                    dev = Interface.objects.get(id=intf).device
-                    dev.primary_ip4 = None
-                    dev.validated_save()
-                else:
-                    self.diffsync.objects_to_create["device_primary_ip4"].append(
-                        (self.diffsync.device_map[device], ip.id)
-                    )
-            else:
-                if not attrs["primary"]:
-                    dev = Interface.objects.get(id=intf).device
-                    dev.primary_ip6 = None
-                    dev.validated_save()
-                else:
-                    self.diffsync.objects_to_create["device_primary_ip6"].append(
-                        (self.diffsync.device_map[device], ip.id)
-                    )
         if "tenant" in attrs:
             if attrs.get("tenant"):
                 ip.tenant_id = self.diffsync.tenant_map[attrs["tenant"]]
@@ -365,4 +324,52 @@ class NautobotIPAddress(IPAddress):
         ip = OrmIPAddress.objects.get(id=self.uuid)
         super().delete()
         self.diffsync.objects_to_delete["ipaddrs"].append(ip)
+        return self
+
+
+class NautobotIPAssignment(IPAssignment):
+    """Nautobot implementation of Citrix ADM IPAddressOnInterface model."""
+
+    @classmethod
+    def create(cls, diffsync, ids, attrs):
+        """Create IPAddressToInterface in Nautobot from IPAddressOnInterface object."""
+        new_map = IPAddressToInterface(
+            ip_address_id=diffsync.ipaddr_map[attrs["namespace"]][ids["address"]],
+            interface_id=diffsync.port_map[ids["device"]][ids["port"]],
+        )
+        diffsync.objects_to_create["ipaddrs-to-intfs"].append(new_map)
+        if attrs.get("primary"):
+            if new_map.ip_address.ip_version == 4:
+                diffsync.objects_to_create["device_primary_ip4"].append(
+                    new_map.interface.device.id, new_map.ip_address.id
+                )
+            else:
+                diffsync.objects_to_create["device_primary_ip6"].append(
+                    new_map.interface.device.id, new_map.ip_address.id
+                )
+        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+
+    def update(self, attrs):
+        """Update IP Address in Nautobot from IPAddressOnInterface object."""
+        mapping = IPAddressToInterface.objects.get(id=self.uuid)
+        if attrs.get("primary"):
+            if mapping.ip_address.ip_version == 4:
+                self.diffsync.objects_to_create["device_primary_ip4"].append(
+                    mapping.interface.device.id, mapping.ip_address.id
+                )
+            else:
+                self.diffsync.objects_to_create["device_primary_ip6"].append(
+                    mapping.interface.device.id, mapping.ip_address.id
+                )
+        mapping.validated_save()
+        return super().update(attrs)
+
+    def delete(self):
+        """Delete IPAddressToInterface in Nautobot from NautobotIPAddressOnInterface object."""
+        mapping = IPAddressToInterface.objects.get(id=self.uuid)
+        super().delete()
+        self.diffsync.job.logger.info(
+            f"Deleting IPAddress to Interface mapping between {self.address} and {self.device}'s {self.port} port."
+        )
+        mapping.delete()
         return self

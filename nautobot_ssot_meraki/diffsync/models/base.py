@@ -82,8 +82,8 @@ class Prefix(DiffSyncModel):
     """DiffSync model for Meraki Prefixes."""
 
     _modelname = "prefix"
-    _identifiers = ("prefix",)
-    _attributes = ("location", "namespace", "tenant")
+    _identifiers = ("prefix", "namespace")
+    _attributes = ("location", "tenant")
     _children = {}
 
     prefix: str
@@ -99,14 +99,28 @@ class IPAddress(DiffSyncModel):
 
     _modelname = "ipaddress"
     _identifiers = ("address", "prefix")
-    _attributes = ("device", "port", "primary", "tenant")
+    _attributes = ("tenant",)
     _children = {}
 
     address: str
+    prefix: str
+    tenant: Optional[str]
+
+    uuid: Optional[UUID]
+
+
+class IPAssignment(DiffSyncModel):
+    """DiffSync model for Citrix ADM tracking IPAddress on particular Device interfaces."""
+
+    _modelname = "ipassignment"
+    _identifiers = ("address", "device", "port")
+    _attributes = ("primary",)
+    _children = {}
+
+    address: str
+    namespace: str
     device: str
     port: str
-    prefix: str
     primary: bool
-    tenant: Optional[str]
 
     uuid: Optional[UUID]
