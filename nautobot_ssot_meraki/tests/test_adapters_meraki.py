@@ -28,7 +28,7 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.meraki_client.get_org_switchports.return_value = fix.GET_ORG_SWITCHPORTS_RECV_FIXTURE
 
         self.job = MerakiDataSource()
-        self.job.log_warning = MagicMock()
+        self.job.logger.warning = MagicMock()
         self.job.job_result = JobResult.objects.create(
             name=self.job.class_path, task_name="fake task", worker="default"
         )
@@ -81,16 +81,16 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         """Validate error thrown when duplicate network attempts to be loaded."""
         self.meraki.load_networks()
         self.meraki.load_networks()
-        self.job.log_warning.assert_called()
-        self.job.log_warning.calls[0].contains(message="Duplicate network Lab found and being skipped.")
-        self.job.log_warning.calls[1].contains(message="Duplicate network HQ found and being skipped.")
+        self.job.logger.warning.assert_called()
+        self.job.logger.warning.calls[0].contains(message="Duplicate network Lab found and being skipped.")
+        self.job.logger.warning.calls[1].contains(message="Duplicate network HQ found and being skipped.")
 
     def test_duplicate_device_loading_error(self):
         """Validate error thrown when duplicate device attempts to be loaded."""
         self.meraki.load_devices()
         self.meraki.load_devices()
-        self.job.log_warning.assert_called()
-        self.job.log_warning.calls[0].contains(message="Duplicate device Lab01 found and being skipped.")
-        self.job.log_warning.calls[1].contains(message="Duplicate device HQ01 found and being skipped.")
-        self.job.log_warning.calls[2].contains(message="Duplicate device Lab Switch found and being skipped.")
-        self.job.log_warning.calls[3].contains(message="Duplicate device HQ AP found and being skipped.")
+        self.job.logger.warning.assert_called()
+        self.job.logger.warning.calls[0].contains(message="Duplicate device Lab01 found and being skipped.")
+        self.job.logger.warning.calls[1].contains(message="Duplicate device HQ01 found and being skipped.")
+        self.job.logger.warning.calls[2].contains(message="Duplicate device Lab Switch found and being skipped.")
+        self.job.logger.warning.calls[3].contains(message="Duplicate device HQ AP found and being skipped.")
