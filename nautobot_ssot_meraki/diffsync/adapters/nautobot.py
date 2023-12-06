@@ -54,6 +54,7 @@ class NautobotAdapter(DiffSync):
     port_map = {}
     namespace_map = {}
     prefix_map = {}
+    ipaddr_map = {}
     relationship_map = {}
     contenttype_map = {}
     version_map = {}
@@ -167,6 +168,9 @@ class NautobotAdapter(DiffSync):
     def load_ipaddresses(self):
         """Load IPAddresses from Nautobot into DiffSync models."""
         for ipaddr in IPAddress.objects.filter(_custom_field_data__system_of_record="Meraki SSoT"):
+            if ipaddr.parent.namespace not in self.ipaddr_map:
+                self.ipaddr_map[ipaddr.parent.namespace] = {}
+            self.ipaddr_map[ipaddr.parent.namespace][ipaddr.address] = ipaddr.id
             for intf in ipaddr.interfaces.all():
                 new_ip = self.ipaddress(
                     address=str(ipaddr.address),
