@@ -120,13 +120,14 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         )
         self.assertEqual({"wan1__Lab01"}, {port.get_unique_id() for port in self.nb_adapter.get_all("port")})
         self.assertEqual(
-            {str(pf.prefix) for pf in Prefix.objects.all()},
+            {f"{pf.prefix}__{pf.namespace.name}" for pf in Prefix.objects.all()},
             {pf.get_unique_id() for pf in self.nb_adapter.get_all("prefix")},
         )
         self.assertEqual(
-            {
-                f"{ipaddr.ip_address.address}__{ipaddr.interface.device.name}__{ipaddr.interface.name}"
-                for ipaddr in IPAddressToInterface.objects.all()
-            },
+            {f"{ipaddr.address}__{ipaddr.parent.prefix}" for ipaddr in IPAddress.objects.all()},
             {ipaddr.get_unique_id() for ipaddr in self.nb_adapter.get_all("ipaddress")},
+        )
+        self.assertEqual(
+            {"10.0.0.1/24__Lab01__wan1"},
+            {map.get_unique_id() for map in self.nb_adapter.get_all("ipassignment")},
         )
