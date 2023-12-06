@@ -154,7 +154,14 @@ class MerakiAdapter(DiffSync):
                 if port_uplink_settings["svis"]["ipv4"]["assignmentMode"] == "static":
                     port_svis = port_uplink_settings["svis"]["ipv4"]
                     prefix = ipaddress_interface(ip=port_svis["address"], attr="network.with_prefixlen")
+                    self.load_prefix(
+                        location=self.conn.network_map[network_id]["name"],
+                        prefix=prefix,
+                    )
                     self.load_ipaddress(
+                        address=port_svis["address"],
+                        prefix=prefix,
+                    )
                     self.load_ipassignment(
                         address=port_svis["address"],
                         dev_name=device.name,
@@ -206,7 +213,14 @@ class MerakiAdapter(DiffSync):
                         ip=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(netmask=mgmt_ports[port]['staticSubnetMask'])}",
                         attr="network.with_prefixlen",
                     )
+                    self.load_prefix(
+                        location=self.conn.network_map[self.device_map[device.name]["networkId"]]["name"],
+                        prefix=prefix,
+                    )
                     self.load_ipaddress(
+                        address=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(mgmt_ports[port]['staticSubnetMask'])}",
+                        prefix=prefix,
+                    )
                     self.load_ipassignment(
                         address=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(mgmt_ports[port]['staticSubnetMask'])}",
                         dev_name=device.name,
@@ -253,7 +267,14 @@ class MerakiAdapter(DiffSync):
                         ip=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(netmask=mgmt_ports[port]['staticSubnetMask'])}",
                         attr="network.with_prefixlen",
                     )
+                    self.load_prefix(
+                        location=self.conn.network_map[self.device_map[device.name]["networkId"]]["name"],
+                        prefix=prefix,
+                    )
                     self.load_ipaddress(
+                        address=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(mgmt_ports[port]['staticSubnetMask'])}",
+                        prefix=prefix,
+                    )
                     self.load_ipassignment(
                         address=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(mgmt_ports[port]['staticSubnetMask'])}",
                         dev_name=device.name,
@@ -261,8 +282,8 @@ class MerakiAdapter(DiffSync):
                         primary=True,
                     )
 
-    def load_ipaddress(self, address: str, dev_name: str, location: str, port: str, prefix: str, primary: bool):
-        """Load IPAddresses of devices into DiffSync models."""
+    def load_prefix(self, location: str, prefix: str):
+        """Load Prefixes of devices into DiffSync models."""
         if self.tenant:
             namespace = self.tenant.name
         else:
@@ -278,6 +299,9 @@ class MerakiAdapter(DiffSync):
                 uuid=None,
             )
             self.add(new_pf)
+
+    def load_ipaddress(self, address: str, prefix: str):
+        """Load IPAddresses of devices into DiffSync models."""
         try:
             self.get(self.ipaddress, {"address": address, "prefix": prefix})
         except ObjectNotFound:
@@ -310,4 +334,5 @@ class MerakiAdapter(DiffSync):
             self.load_networks()
             self.load_devices()
         else:
-            self.job.log_failure("Specified organization ID not found in Meraki dashboard.")
+            self.job.logger.error("Specified organization ID not found in Meraki dashboard.")
+            raise Exception("Incorrect Organization ID specified.")
