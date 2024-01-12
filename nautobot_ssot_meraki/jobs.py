@@ -3,7 +3,7 @@ from django.conf import settings
 from nautobot.core.celery import register_jobs
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
 from nautobot.extras.jobs import BooleanVar, ObjectVar
-from nautobot.extras.models import SecretsGroup
+from nautobot.extras.models import ExternalIntegration
 from nautobot.tenancy.models import Tenant
 from nautobot_ssot.jobs.base import DataSource
 from nautobot_ssot_meraki.diffsync.adapters import meraki, nautobot
@@ -18,8 +18,13 @@ name = "Meraki SSoT"  # pylint: disable=invalid-name
 class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attributes
     """Meraki SSoT Data Source."""
 
-    credentials = ObjectVar(
-        model=SecretsGroup, queryset=SecretsGroup.objects.all(), display_field="display_name", required=True
+    instance = ObjectVar(
+        model=ExternalIntegration,
+        queryset=ExternalIntegration.objects.all(),
+        description="ExternalIntegration containing information for connecting to Meraki dashboard.",
+        display_field="display",
+        label="Meraki Instance",
+        required=True,
     )
     debug = BooleanVar(description="Enable for more verbose debug logging", default=False)
     tenant = ObjectVar(model=Tenant, label="Tenant", required=False)
@@ -49,7 +54,7 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
 
     def load_source_adapter(self):
         """Load data from Meraki into DiffSync models."""
-        _sg = self.credentials
+        _sg = self.instance.secrets_group
         org_id = _sg.get_secret_value(
             access_type=SecretsGroupAccessTypeChoices.TYPE_HTTP,
             secret_type=SecretsGroupSecretTypeChoices.TYPE_USERNAME,
@@ -68,12 +73,12 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         self.target_adapter.load()
 
     def run(
-        self, dryrun, memory_profiling, credentials, debug, tenant, *args, **kwargs
+        self, dryrun, memory_profiling, instance, debug, tenant, *args, **kwargs
     ):  # pylint: disable=arguments-differ, too-many-arguments
         """Perform data synchronization."""
         self.dryrun = dryrun
         self.memory_profiling = memory_profiling
-        self.credentials = credentials
+        self.instance = instance
         self.debug = debug
         self.tenant = tenant
         super().run(dryrun - self.dryrun, memory_profiling=self.memory_profiling, *args, **kwargs)
