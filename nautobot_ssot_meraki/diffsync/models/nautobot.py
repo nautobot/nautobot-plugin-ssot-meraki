@@ -27,6 +27,7 @@ class NautobotNetwork(Network):
         new_site = Location(
             name=ids["name"],
             location_type_id=diffsync.locationtype_map["Site"],
+            parent_id=diffsync.location_map["Global Region"],
             status_id=diffsync.status_map["Active"],
             time_zone=attrs["timezone"],
         )
