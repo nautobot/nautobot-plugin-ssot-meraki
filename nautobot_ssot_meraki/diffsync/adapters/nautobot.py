@@ -45,6 +45,7 @@ class NautobotAdapter(DiffSync):
     status_map = {}
     tenant_map = {}
     locationtype_map = {}
+    region_map = {}
     site_map = {}
     platform_map = {}
     manufacturer_map = {}
@@ -278,6 +279,7 @@ class NautobotAdapter(DiffSync):
         """Load data from Nautobot into DiffSync models."""
         self.status_map = {s.name: s.id for s in Status.objects.only("id", "name")}
         self.locationtype_map = {lt.name: lt.id for lt in LocationType.objects.only("id", "name")}
+        self.region_map["Global Region"] = Location.objects.get(name="Global Region").id
         self.platform_map = {p.name: p.id for p in Platform.objects.only("id", "name")}
         self.manufacturer_map = {m.name: m.id for m in Manufacturer.objects.only("id", "name")}
         self.devicerole_map = {d.name: d.id for d in Role.objects.only("id", "name")}
