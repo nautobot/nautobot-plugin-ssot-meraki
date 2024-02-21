@@ -297,7 +297,7 @@ class NautobotIPAddress(IPAddress):
             status_id=diffsync.status_map["Active"],
             tenant_id=diffsync.tenant_map[attrs["tenant"]] if attrs.get("tenant") else None,
         )
-        diffsync.objects_to_create["ipaddrs-to-prefixes"].append((new_ip, diffsync.prefix_map[attrs["prefix"]]))
+        diffsync.objects_to_create["ipaddrs-to-prefixes"].append((new_ip, diffsync.prefix_map[ids["prefix"]]))
         new_ip.custom_field_data["system_of_record"] = "Meraki SSoT"
         new_ip.custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         diffsync.objects_to_create["ipaddrs"].append(new_ip)
