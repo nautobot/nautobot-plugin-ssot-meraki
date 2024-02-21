@@ -1,4 +1,5 @@
 """Nautobot DiffSync models for Meraki SSoT."""
+
 from datetime import datetime
 from nautobot.dcim.models import Device as NewDevice
 from nautobot.dcim.models import DeviceType, Interface, Location
@@ -290,9 +291,9 @@ class NautobotIPAddress(IPAddress):
         """Create IPAddress in Nautobot from NautobotIPAddress object."""
         new_ip = OrmIPAddress(
             address=ids["address"],
-            namespace=diffsync.namespace_map[attrs["tenant"]]
-            if attrs.get("tenant")
-            else diffsync.namespace_map["Global"],
+            namespace=(
+                diffsync.namespace_map[attrs["tenant"]] if attrs.get("tenant") else diffsync.namespace_map["Global"]
+            ),
             status_id=diffsync.status_map["Active"],
             tenant_id=diffsync.tenant_map[attrs["tenant"]] if attrs.get("tenant") else None,
         )
