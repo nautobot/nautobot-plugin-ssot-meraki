@@ -339,12 +339,12 @@ class NautobotIPAssignment(IPAssignment):
         )
         diffsync.objects_to_create["ipaddrs-to-intfs"].append(new_map)
         if attrs.get("primary"):
-            if new_map.ip_address.ip_version == 4:
-                diffsync.objects_to_create["device_primary_ip4"].append(
+            if ":" in ids["address"]:
+                diffsync.objects_to_create["device_primary_ip6"].append(
                     new_map.interface.device.id, new_map.ip_address.id
                 )
             else:
-                diffsync.objects_to_create["device_primary_ip6"].append(
+                diffsync.objects_to_create["device_primary_ip4"].append(
                     new_map.interface.device.id, new_map.ip_address.id
                 )
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
