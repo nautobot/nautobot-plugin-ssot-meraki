@@ -341,11 +341,11 @@ class NautobotIPAssignment(IPAssignment):
         if attrs.get("primary"):
             if ":" in ids["address"]:
                 diffsync.objects_to_create["device_primary_ip6"].append(
-                    new_map.interface.device.id, new_map.ip_address.id
+                    (diffsync.device_map[ids["device"]], diffsync.ipaddr_map[attrs["namespace"]][ids["address"]])
                 )
             else:
                 diffsync.objects_to_create["device_primary_ip4"].append(
-                    new_map.interface.device.id, new_map.ip_address.id
+                    (diffsync.device_map[ids["device"]], diffsync.ipaddr_map[attrs["namespace"]][ids["address"]])
                 )
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
@@ -355,11 +355,11 @@ class NautobotIPAssignment(IPAssignment):
         if attrs.get("primary"):
             if mapping.ip_address.ip_version == 4:
                 self.diffsync.objects_to_create["device_primary_ip4"].append(
-                    mapping.interface.device.id, mapping.ip_address.id
+                    (mapping.interface.device.id, mapping.ip_address.id)
                 )
             else:
                 self.diffsync.objects_to_create["device_primary_ip6"].append(
-                    mapping.interface.device.id, mapping.ip_address.id
+                    (mapping.interface.device.id, mapping.ip_address.id)
                 )
         mapping.validated_save()
         return super().update(attrs)
