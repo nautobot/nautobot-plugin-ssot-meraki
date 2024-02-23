@@ -1,4 +1,5 @@
 """Jobs for Meraki SSoT integration."""
+
 from django.conf import settings
 from nautobot.core.celery import register_jobs
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
@@ -69,7 +70,7 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
 
     def load_target_adapter(self):
         """Load data from Nautobot into DiffSync models."""
-        self.target_adapter = nautobot.NautobotAdapter(job=self, sync=self.sync)
+        self.target_adapter = nautobot.NautobotAdapter(job=self, sync=self.sync, tenant=self.tenant)
         self.target_adapter.load()
 
     def run(
