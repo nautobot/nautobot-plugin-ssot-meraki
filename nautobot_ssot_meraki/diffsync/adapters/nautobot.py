@@ -1,5 +1,7 @@
 """Nautobot Adapter for Meraki SSoT plugin."""
+
 from collections import defaultdict
+from typing import Optional
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
 from django.contrib.contenttypes.models import ContentType
@@ -60,7 +62,7 @@ class NautobotAdapter(DiffSync):
     contenttype_map = {}
     version_map = {}
 
-    def __init__(self, *args, job, sync=None, **kwargs):
+    def __init__(self, *args, job, sync=None, tenant: Optional[Tenant] = None, **kwargs):
         """Initialize Nautobot.
 
         Args:
@@ -70,6 +72,7 @@ class NautobotAdapter(DiffSync):
         super().__init__(*args, **kwargs)
         self.job = job
         self.sync = sync
+        self.tenant = tenant
         self.objects_to_create = defaultdict(list)
         self.objects_to_delete = defaultdict(list)
 
@@ -106,7 +109,11 @@ class NautobotAdapter(DiffSync):
 
     def load_devices(self):
         """Load Device data from Nautobot into DiffSync model."""
-        for dev in Device.objects.filter(_custom_field_data__system_of_record="Meraki SSoT"):
+        if self.tenant:
+            devices = Device.objects.filter(tenant=self.tenant)
+        else:
+            devices = Device.objects.filter(_custom_field_data__system_of_record="Meraki SSoT")
+        for dev in devices:
             try:
                 self.get(self.device, dev.name)
             except ObjectNotFound:
@@ -131,7 +138,11 @@ class NautobotAdapter(DiffSync):
 
     def load_ports(self):
         """Load Port data from Nautobot into DiffSync model."""
-        for intf in Interface.objects.filter(_custom_field_data__system_of_record="Meraki SSoT"):
+        if self.tenant:
+            ports = Interface.objects.filter(device__tenant=self.tenant)
+        else:
+            ports = Interface.objects.filter(_custom_field_data__system_of_record="Meraki SSoT")
+        for intf in ports:
             try:
                 self.get(self.port, {"name": intf.name, "device": intf.device.name})
             except ObjectNotFound:
@@ -168,7 +179,11 @@ class NautobotAdapter(DiffSync):
 
     def load_ipaddresses(self):
         """Load IPAddresses from Nautobot into DiffSync models."""
-        for ipaddr in IPAddress.objects.filter(_custom_field_data__system_of_record="Meraki SSoT"):
+        if self.tenant:
+            addresses = IPAddress.objects.filter(tenant=self.tenant)
+        else:
+            addresses = IPAddress.objects.filter(_custom_field_data__system_of_record="Meraki SSoT")
+        for ipaddr in addresses:
             if ipaddr.parent.namespace not in self.ipaddr_map:
                 self.ipaddr_map[ipaddr.parent.namespace] = {}
             self.ipaddr_map[ipaddr.parent.namespace][ipaddr.address] = ipaddr.id
@@ -183,9 +198,13 @@ class NautobotAdapter(DiffSync):
 
     def load_ipassignments(self):
         """Load IPAddressToInterface from Nautobot into DiffSync models."""
-        for ipassignment in IPAddressToInterface.objects.filter(
-            ip_address___custom_field_data__system_of_record="Meraki SSoT"
-        ):
+        if self.tenant:
+            mappings = IPAddressToInterface.objects.filter(ip_address__tenant=self.tenant)
+        else:
+            mappings = IPAddressToInterface.objects.filter(
+                ip_address___custom_field_data__system_of_record="Meraki SSoT"
+            )
+        for ipassignment in mappings:
             new_map = self.ipassignment(
                 address=str(ipassignment.ip_address.address),
                 namespace=ipassignment.ip_address.parent.namespace.name,
