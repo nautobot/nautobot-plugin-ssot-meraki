@@ -1,4 +1,5 @@
 """Nautobot SSoT for Meraki Adapter for Meraki SSoT plugin."""
+
 from django.conf import settings
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
@@ -317,12 +318,13 @@ class MerakiAdapter(DiffSync):
 
     def load_ipassignment(self, address: str, dev_name: str, port: str, primary: bool):
         """Load IPAddressesToInterface of devices into DiffSync models."""
+        namespace = self.tenant.name if self.tenant else "Global"
         try:
-            self.get(self.ipassignment, {"address": address, "device": dev_name, "port": port})
+            self.get(self.ipassignment, {"address": address, "namespace": namespace})
         except ObjectNotFound:
             new_map = self.ipassignment(
                 address=address,
-                namespace=self.tenant.name if self.tenant else "Global",
+                namespace=namespace,
                 device=dev_name,
                 port=port,
                 primary=primary,
