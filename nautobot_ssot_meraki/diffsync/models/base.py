@@ -1,4 +1,5 @@
 """DiffSyncModel subclasses for Nautobot-to-Meraki data sync."""
+
 from typing import List, Optional
 from uuid import UUID
 from diffsync import DiffSyncModel
@@ -113,8 +114,12 @@ class IPAssignment(DiffSyncModel):
     """DiffSync model for Citrix ADM tracking IPAddress on particular Device interfaces."""
 
     _modelname = "ipassignment"
-    _identifiers = ("address", "device", "port")
-    _attributes = ("primary",)
+    _identifiers = ("address", "namespace")
+    _attributes = (
+        "primary",
+        "device",
+        "port",
+    )
     _children = {}
 
     address: str
