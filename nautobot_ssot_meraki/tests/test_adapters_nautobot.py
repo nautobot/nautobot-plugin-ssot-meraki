@@ -1,4 +1,5 @@
 """Unit tests for the Nautobot DiffSync adapter."""
+
 from unittest.mock import MagicMock
 
 from django.contrib.auth import get_user_model
@@ -34,6 +35,13 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         self.nb_adapter.job = MagicMock()
         self.nb_adapter.job.logger.warning = MagicMock()
 
+        self.region_type = LocationType.objects.get_or_create(name="Region", defaults={"nestable": True})[0]
+        global_region = Location.objects.create(
+            name="Global Region",
+            location_type=self.region_type,
+            status=self.status_active,
+        )
+        global_region.validated_save()
         self.site_type = LocationType.objects.get(name="Site")
         site1 = Location.objects.create(
             name="Lab",
@@ -128,6 +136,6 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
             {ipaddr.get_unique_id() for ipaddr in self.nb_adapter.get_all("ipaddress")},
         )
         self.assertEqual(
-            {"10.0.0.1/24__Lab01__wan1"},
+            {"10.0.0.1/24__Test"},
             {map.get_unique_id() for map in self.nb_adapter.get_all("ipassignment")},
         )
