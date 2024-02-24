@@ -184,17 +184,20 @@ class NautobotAdapter(DiffSync):
         else:
             addresses = IPAddress.objects.filter(_custom_field_data__system_of_record="Meraki SSoT")
         for ipaddr in addresses:
-            if ipaddr.parent.namespace not in self.ipaddr_map:
-                self.ipaddr_map[ipaddr.parent.namespace] = {}
-            self.ipaddr_map[ipaddr.parent.namespace][ipaddr.address] = ipaddr.id
-            for intf in ipaddr.interfaces.all():
-                new_ip = self.ipaddress(
-                    address=str(ipaddr.address),
-                    prefix=str(ipaddr.parent.prefix) if ipaddr.parent else "",
-                    tenant=intf.device.tenant.name if intf.device.tenant else None,
-                    uuid=ipaddr.id,
-                )
-                self.add(new_ip)
+            try:
+                self.get(self.ipaddress, {"address": str(ipaddr.address), "prefix": str(ipaddr.parent.prefix)})
+            except ObjectNotFound:
+                if ipaddr.parent.namespace not in self.ipaddr_map:
+                    self.ipaddr_map[ipaddr.parent.namespace] = {}
+                self.ipaddr_map[ipaddr.parent.namespace][ipaddr.address] = ipaddr.id
+                for intf in ipaddr.interfaces.all():
+                    new_ip = self.ipaddress(
+                        address=str(ipaddr.address),
+                        prefix=str(ipaddr.parent.prefix) if ipaddr.parent else "",
+                        tenant=intf.device.tenant.name if intf.device.tenant else None,
+                        uuid=ipaddr.id,
+                    )
+                    self.add(new_ip)
 
     def load_ipassignments(self):
         """Load IPAddressToInterface from Nautobot into DiffSync models."""
