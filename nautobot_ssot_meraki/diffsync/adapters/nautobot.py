@@ -3,6 +3,7 @@
 from collections import defaultdict
 from typing import Optional
 from diffsync import DiffSync
+from diffsync.enum import DiffSyncModelFlags
 from diffsync.exceptions import ObjectNotFound
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import ProtectedError
@@ -104,6 +105,8 @@ class NautobotAdapter(DiffSync):
                 self.get(self.hardware, dt.model)
             except ObjectNotFound:
                 new_dt = self.hardware(model=dt.model, uuid=dt.id)
+                if self.tenant:
+                    new_dt.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
                 self.add(new_dt)
                 self.devicetype_map[dt.model] = dt.id
 
@@ -134,6 +137,8 @@ class NautobotAdapter(DiffSync):
                 if dev.notes:
                     note = dev.notes.last()
                     new_dev.notes = note.note.rstrip()
+                if self.tenant:
+                    new_dev.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
                 self.add(new_dev)
 
     def load_ports(self):
@@ -157,6 +162,8 @@ class NautobotAdapter(DiffSync):
                     tagging=False if intf.mode == "access" else True,
                     uuid=intf.id,
                 )
+                if self.tenant:
+                    new_port.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
                 self.add(new_port)
                 dev = self.get(self.device, intf.device.name)
                 dev.add_child(new_port)
@@ -174,6 +181,8 @@ class NautobotAdapter(DiffSync):
                     tenant=prefix.tenant.name if prefix.tenant else None,
                     uuid=prefix.id,
                 )
+                if self.tenant:
+                    new_pf.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
                 self.add(new_pf)
                 self.prefix_map[str(prefix.prefix)] = prefix.id
 
@@ -197,6 +206,8 @@ class NautobotAdapter(DiffSync):
                         tenant=intf.device.tenant.name if intf.device.tenant else None,
                         uuid=ipaddr.id,
                     )
+                    if self.tenant:
+                        new_ip.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
                     self.add(new_ip)
 
     def load_ipassignments(self):
@@ -217,6 +228,8 @@ class NautobotAdapter(DiffSync):
                 or len(ipassignment.ip_address.primary_ip6_for.all()) > 0,
                 uuid=ipassignment.id,
             )
+            if self.tenant:
+                new_map.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
             self.add(new_map)
 
     def sync_complete(self, source: DiffSync, *args, **kwargs):
