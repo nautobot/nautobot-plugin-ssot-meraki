@@ -114,12 +114,8 @@ class IPAssignment(DiffSyncModel):
     """DiffSync model for Citrix ADM tracking IPAddress on particular Device interfaces."""
 
     _modelname = "ipassignment"
-    _identifiers = ("address", "namespace")
-    _attributes = (
-        "primary",
-        "device",
-        "port",
-    )
+    _identifiers = ("address", "device", "namespace", "port")
+    _attributes = ("primary",)
     _children = {}
 
     address: str

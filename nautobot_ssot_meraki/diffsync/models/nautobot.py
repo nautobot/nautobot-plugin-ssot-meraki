@@ -335,48 +335,23 @@ class NautobotIPAssignment(IPAssignment):
         """Create IPAddressToInterface in Nautobot from IPAddressOnInterface object."""
         new_map = IPAddressToInterface(
             ip_address_id=diffsync.ipaddr_map[ids["namespace"]][ids["address"]],
-            interface_id=diffsync.port_map[attrs["device"]][attrs["port"]],
+            interface_id=diffsync.port_map[ids["device"]][ids["port"]],
         )
         diffsync.objects_to_create["ipaddrs-to-intfs"].append(new_map)
         if attrs.get("primary"):
             if ":" in ids["address"]:
                 diffsync.objects_to_create["device_primary_ip6"].append(
-                    (diffsync.device_map[attrs["device"]], diffsync.ipaddr_map[ids["namespace"]][ids["address"]])
+                    (diffsync.device_map[ids["device"]], diffsync.ipaddr_map[ids["namespace"]][ids["address"]])
                 )
             else:
                 diffsync.objects_to_create["device_primary_ip4"].append(
-                    (diffsync.device_map[attrs["device"]], diffsync.ipaddr_map[ids["namespace"]][ids["address"]])
+                    (diffsync.device_map[ids["device"]], diffsync.ipaddr_map[ids["namespace"]][ids["address"]])
                 )
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
     def update(self, attrs):
         """Update IP Address in Nautobot from IPAddressOnInterface object."""
         mapping = IPAddressToInterface.objects.get(id=self.uuid)
-        if attrs.get("port") and attrs.get("device"):
-            for port in self.diffsync.objects_to_create["ports"]:
-                if port.name == attrs["port"] and port.device_id == self.diffsync.device_map[attrs["device"]]:
-                    port.validated_save()
-                    mapping.interface_id = port.id
-                    self.diffsync.objects_to_create["ports"].remove(port)
-        elif attrs.get("device") and not attrs.get("port"):
-            # check if Device is newly created and is going to be created in sync_complete to ensure it's in DB for updating mapping.
-            for dev in self.diffsync.objects_to_create["devices"]:
-                if dev.name == attrs["device"]:
-                    dev.validated_save()
-                    self.diffsync.objects_to_create["devices"].remove(dev)
-                    # if Device is found in objects_to_create it's assumed its ports will also be in there.
-                    for port in self.diffsync.objects_to_create["ports"]:
-                        if port.name == self.port and port.device_id == self.diffsync.device_map[attrs["device"]]:
-                            port.validated_save()
-                            self.diffsync.objects_to_create["ports"].remove(port)
-            mapping.interface_id = self.diffsync.port_map[attrs["device"]][self.port]
-        elif not attrs.get("device") and attrs.get("port"):
-            for port in self.diffsync.objects_to_create["ports"]:
-                if port.name == self.port and port.device_id == self.diffsync.device_map[self.device]:
-                    port.validated_save()
-                    self.diffsync.objects_to_create["ports"].remove(port)
-                    mapping.interface_id = port.id
-        mapping.validated_save()
         if attrs.get("primary"):
             if mapping.ip_address.ip_version == 4:
                 self.diffsync.objects_to_create["device_primary_ip4"].append(
