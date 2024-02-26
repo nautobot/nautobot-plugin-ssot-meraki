@@ -320,7 +320,7 @@ class MerakiAdapter(DiffSync):
         """Load IPAddressesToInterface of devices into DiffSync models."""
         namespace = self.tenant.name if self.tenant else "Global"
         try:
-            self.get(self.ipassignment, {"address": address, "namespace": namespace})
+            self.get(self.ipassignment, {"address": address, "device": dev_name, "namespace": namespace, "port": port})
         except ObjectNotFound:
             new_map = self.ipassignment(
                 address=address,
