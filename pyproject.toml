@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-ssot-meraki"
-version = "0.7.2"
+version = "2.0.0"
 description = "Nautobot SSoT for Meraki"
 authors = ["Justin Drew <info@networktocode.com>"]
 readme = "README.md"
