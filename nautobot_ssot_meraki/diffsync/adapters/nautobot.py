@@ -69,6 +69,7 @@ class NautobotAdapter(DiffSync):
         Args:
             job (object): Nautobot job.
             sync (object, optional): Nautobot DiffSync. Defaults to None.
+            tenant (Tenant, optional): Nautobot Tenant to assign to loaded objects. Defaults to None.
         """
         super().__init__(*args, **kwargs)
         self.job = job
