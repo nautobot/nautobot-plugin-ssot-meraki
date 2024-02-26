@@ -171,21 +171,22 @@ class NautobotAdapter(DiffSync):
 
     def load_prefixes(self):
         """Load Prefixes from Nautobot into DiffSync models."""
-        for prefix in Prefix.objects.filter(_custom_field_data__system_of_record="Meraki SSoT"):
-            try:
-                self.get(self.prefix, {"prefix": str(prefix.prefix), "namespace": prefix.namespace.name})
-            except ObjectNotFound:
-                new_pf = self.prefix(
-                    prefix=str(prefix.prefix),
-                    location=prefix.location.name if prefix.location else "",
-                    namespace=prefix.namespace.name,
-                    tenant=prefix.tenant.name if prefix.tenant else None,
-                    uuid=prefix.id,
-                )
-                if self.tenant:
-                    new_pf.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
-                self.add(new_pf)
-                self.prefix_map[str(prefix.prefix)] = prefix.id
+        if self.tenant:
+            prefixes = Prefix.objects.filter(tenant=self.tenant)
+        else:
+            prefixes = Prefix.objects.filter(_custom_field_data__system_of_record="Meraki SSoT")
+        for prefix in prefixes:
+            new_pf = self.prefix(
+                prefix=str(prefix.prefix),
+                location=prefix.location.name if prefix.location else "",
+                namespace=prefix.namespace.name,
+                tenant=prefix.tenant.name if prefix.tenant else None,
+                uuid=prefix.id,
+            )
+            if self.tenant:
+                new_pf.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
+            self.add(new_pf)
+            self.prefix_map[str(prefix.prefix)] = prefix.id
 
     def load_ipaddresses(self):
         """Load IPAddresses from Nautobot into DiffSync models."""
