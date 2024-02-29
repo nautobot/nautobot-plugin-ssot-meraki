@@ -197,7 +197,7 @@ class NautobotAdapter(DiffSync):
         for ipaddr in addresses:
             if ipaddr.parent.namespace not in self.ipaddr_map:
                 self.ipaddr_map[ipaddr.parent.namespace] = {}
-            self.ipaddr_map[ipaddr.parent.namespace][ipaddr.address] = ipaddr.id
+            self.ipaddr_map[ipaddr.parent.namespace][str(ipaddr.address)] = ipaddr.id
             new_ip = self.ipaddress(
                 address=str(ipaddr.address),
                 prefix=str(ipaddr.parent.prefix) if ipaddr.parent else "",
