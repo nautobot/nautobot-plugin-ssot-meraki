@@ -195,9 +195,9 @@ class NautobotAdapter(DiffSync):
         else:
             addresses = IPAddress.objects.filter(_custom_field_data__system_of_record="Meraki SSoT")
         for ipaddr in addresses:
-            if ipaddr.parent.namespace not in self.ipaddr_map:
-                self.ipaddr_map[ipaddr.parent.namespace] = {}
-            self.ipaddr_map[ipaddr.parent.namespace][str(ipaddr.address)] = ipaddr.id
+            if str(ipaddr.parent.namespace) not in self.ipaddr_map:
+                self.ipaddr_map[str(ipaddr.parent.namespace)] = {}
+            self.ipaddr_map[str(ipaddr.parent.namespace)][str(ipaddr.address)] = ipaddr.id
             new_ip = self.ipaddress(
                 address=str(ipaddr.address),
                 prefix=str(ipaddr.parent.prefix) if ipaddr.parent else "",
