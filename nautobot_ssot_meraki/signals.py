@@ -19,7 +19,7 @@ def nautobot_database_ready_callback(sender, *, apps, **kwargs):  # pylint: disa
     Manufacturer = apps.get_model("dcim", "Manufacturer")
     Platform = apps.get_model("dcim", "Platform")
 
-    site = LocationType.objects.update_or_create(name="Site", defaults={"nestable": True})[0]
+    site = LocationType.objects.update_or_create(name="Site", defaults={"nestable": False})[0]
     site.content_types.add(ContentType.objects.get_for_model(Device))
     site.content_types.add(ContentType.objects.get_for_model(Prefix))
 
