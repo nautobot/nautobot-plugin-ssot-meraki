@@ -1,13 +1,13 @@
 """Unit tests for the Nautobot DiffSync adapter."""
-import uuid
+
 from unittest.mock import MagicMock
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from nautobot.dcim.models import Device, DeviceType, DeviceRole, Interface, Manufacturer, Platform, Site
-from nautobot.extras.models import Job, JobResult, Note, Status
-from nautobot.ipam.models import IPAddress, Prefix
-from nautobot.utilities.testing import TransactionTestCase
+from nautobot.core.testing import TransactionTestCase
+from nautobot.dcim.models import Device, DeviceType, Interface, Location, LocationType, Manufacturer, Platform
+from nautobot.extras.models import JobResult, Note, Role, Status
+from nautobot.ipam.models import IPAddress, IPAddressToInterface, Namespace, Prefix
 
 from nautobot_ssot_meraki.diffsync.adapters.nautobot import NautobotAdapter
 from nautobot_ssot_meraki.jobs import MerakiDataSource
@@ -30,16 +30,22 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         self.status_active = Status.objects.get(name="Active")
 
         job = MerakiDataSource()
-        job.job_result = JobResult.objects.create(
-            name=job.class_path, obj_type=ContentType.objects.get_for_model(Job), user=None, job_id=uuid.uuid4()
-        )
+        job.job_result = JobResult.objects.create(name=job.class_path, task_name="fake task", worker="default")
         self.nb_adapter = NautobotAdapter(job=job, sync=None)
         self.nb_adapter.job = MagicMock()
-        self.nb_adapter.job.log_info = MagicMock()
-        self.nb_adapter.job.log_warning = MagicMock()
+        self.nb_adapter.job.logger.warning = MagicMock()
 
-        site1 = Site.objects.create(
+        self.region_type = LocationType.objects.get_or_create(name="Region", defaults={"nestable": True})[0]
+        global_region = Location.objects.create(
+            name="Global Region",
+            location_type=self.region_type,
+            status=self.status_active,
+        )
+        global_region.validated_save()
+        self.site_type = LocationType.objects.get(name="Site")
+        site1 = Location.objects.create(
             name="Lab",
+            location_type=self.site_type,
             status=self.status_active,
             time_zone="America/Chicago",
         )
@@ -49,7 +55,7 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         site_note = Note.objects.create(
             note="Test",
             user=User.objects.first(),
-            assigned_object_type=ContentType.objects.get_for_model(Site),
+            assigned_object_type=ContentType.objects.get_for_model(Location),
             assigned_object_id=site1.id,
         )
         site_note.validated_save()
@@ -62,16 +68,17 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         mx84 = DeviceType.objects.create(model="MX84", manufacturer=cisco_manu)
         mx84.validated_save()
 
-        core_role = DeviceRole.objects.get_or_create(name="CORE")[0]
+        core_role = Role.objects.get_or_create(name="CORE")[0]
+        core_role.content_types.add(ContentType.objects.get_for_model(Device))
 
         lab01 = Device.objects.create(
             name="Lab01",
             serial="ABC-123-456",
             status=self.status_active,
-            device_role=core_role,
+            role=core_role,
             device_type=mx84,
             platform=meraki_plat,
-            site=site1,
+            location=site1,
         )
         lab01.validated_save()
         lab01.custom_field_data["system_of_record"] = "Meraki SSoT"
@@ -97,25 +104,22 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         lab01_mgmt.custom_field_data["system_of_record"] = "Meraki SSoT"
         lab01_mgmt.validated_save()
 
-        Prefix.objects.create(prefix="10.0.0.0/24", status=self.status_active)
-        IPAddress.objects.create(
-            address="10.0.0.1/24",
-            assigned_object=lab01_mgmt,
-            assigned_object_type=ContentType.objects.get_for_model(Interface),
-            status=self.status_active,
+        test_ns = Namespace.objects.create(name="Test")
+        lab_prefix = Prefix.objects.create(
+            prefix="10.0.0.0/24", location=site1, namespace=test_ns, status=self.status_active
         )
-        IPAddress.objects.create(
-            address="192.168.10.1/24",
-            assigned_object=lab01_mgmt,
-            assigned_object_type=ContentType.objects.get_for_model(Interface),
-            status=self.status_active,
-        )
+        lab01_mgmt_ip = IPAddress.objects.create(address="10.0.0.1/24", parent=lab_prefix, status=self.status_active)
+        lab_prefix.custom_field_data["system_of_record"] = "Meraki SSoT"
+        lab_prefix.validated_save()
+        lab01_mgmt_ip.custom_field_data["system_of_record"] = "Meraki SSoT"
+        lab01_mgmt_ip.validated_save()
+        IPAddressToInterface.objects.create(ip_address=lab01_mgmt_ip, interface=lab01_mgmt)
 
     def test_data_loading(self):
         """Test the load() function."""
         self.nb_adapter.load()
         self.assertEqual(
-            {site.name for site in Site.objects.all()},
+            {site.name for site in Location.objects.filter(location_type=self.site_type)},
             {site.get_unique_id() for site in self.nb_adapter.get_all("network")},
         )
         self.assertEqual(
@@ -124,10 +128,14 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         )
         self.assertEqual({"wan1__Lab01"}, {port.get_unique_id() for port in self.nb_adapter.get_all("port")})
         self.assertEqual(
-            {"10.0.0.0/24__Lab"},
+            {f"{pf.prefix}__{pf.namespace.name}" for pf in Prefix.objects.all()},
             {pf.get_unique_id() for pf in self.nb_adapter.get_all("prefix")},
         )
         self.assertEqual(
-            {"10.0.0.1/24__10.0.0.0/24", "192.168.10.1/24__"},
-            {ip.get_unique_id() for ip in self.nb_adapter.get_all("ipaddress")},
+            {f"{ipaddr.address}__{ipaddr.parent.prefix}" for ipaddr in IPAddress.objects.all()},
+            {ipaddr.get_unique_id() for ipaddr in self.nb_adapter.get_all("ipaddress")},
+        )
+        self.assertEqual(
+            {"10.0.0.1/24__Lab01__Test__wan1"},
+            {map.get_unique_id() for map in self.nb_adapter.get_all("ipassignment")},
         )

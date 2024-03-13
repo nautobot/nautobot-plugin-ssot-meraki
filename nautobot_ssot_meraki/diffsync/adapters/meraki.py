@@ -1,4 +1,5 @@
 """Nautobot SSoT for Meraki Adapter for Meraki SSoT plugin."""
+
 from django.conf import settings
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
@@ -6,9 +7,11 @@ from netutils.ip import ipaddress_interface, netmask_to_cidr
 from nautobot_ssot_meraki.diffsync.models.meraki import (
     MerakiNetwork,
     MerakiDevice,
+    MerakiHardware,
     MerakiPort,
     MerakiPrefix,
     MerakiIPAddress,
+    MerakiIPAssignment,
 )
 from nautobot_ssot_meraki.utils.meraki import parse_hostname_for_role, get_role_from_devicetype
 
@@ -19,12 +22,14 @@ class MerakiAdapter(DiffSync):
     """DiffSync adapter for Meraki."""
 
     network = MerakiNetwork
+    hardware = MerakiHardware
     device = MerakiDevice
     port = MerakiPort
     prefix = MerakiPrefix
     ipaddress = MerakiIPAddress
+    ipassignment = MerakiIPAssignment
 
-    top_level = ["network", "device", "prefix", "ipaddress"]
+    top_level = ["network", "hardware", "device", "prefix", "ipaddress", "ipassignment"]
 
     def __init__(self, job, sync, client, tenant=None, *args, **kwargs):
         """Initialize Meraki.
@@ -48,7 +53,7 @@ class MerakiAdapter(DiffSync):
         for net in self.conn.get_org_networks():
             try:
                 self.get(self.network, net["name"])
-                self.job.log_warning(message=f"Duplicate network {net['name']} found and being skipped.")
+                self.job.logger.warning(f"Duplicate network {net['name']} found and being skipped.")
             except ObjectNotFound:
                 new_network = self.network(
                     name=net["name"],
@@ -72,16 +77,19 @@ class MerakiAdapter(DiffSync):
                         status = "Active"
                 try:
                     self.get(self.device, dev["name"])
-                    self.job.log_warning(message=f"Duplicate device {dev['name']} found and being skipped.")
+                    self.job.logger.warning(f"Duplicate device {dev['name']} found and being skipped.")
                 except ObjectNotFound:
                     if PLUGIN_CFG.get("hostname_mapping") and len(PLUGIN_CFG["hostname_mapping"]) > 0:
-                        print(f"Parsing hostname for device {dev['name']} to determine role.")
+                        if self.job.debug:
+                            self.job.logger.debug(f"Parsing hostname for device {dev['name']} to determine role.")
                         role = parse_hostname_for_role(dev_hostname=dev["name"])
                     elif PLUGIN_CFG.get("devicetype_mapping") and len(PLUGIN_CFG["devicetype_mapping"]) > 0:
-                        print(f"Parsing model for device {dev['name']} to determine role.")
+                        if self.job.debug:
+                            self.job.logger.debug(f"Parsing device model for device {dev['name']} to determine role.")
                         role = get_role_from_devicetype(dev_model=dev["model"])
                     else:
                         role = "Unknown"
+                    self.load_hardware_model(device_info=dev)
                     new_dev = self.device(
                         name=dev["name"],
                         notes=dev["notes"].rstrip(),
@@ -102,7 +110,18 @@ class MerakiAdapter(DiffSync):
                     if dev["model"].startswith("MR"):
                         self.load_ap_ports(device=new_dev, serial=dev["serial"])
             else:
-                self.job.log_warning(message=f"Device serial {dev['serial']} is missing hostname so will be skipped.")
+                self.job.logger.warning(f"Device serial {dev['serial']} is missing hostname so will be skipped.")
+
+    def load_hardware_model(self, device_info: dict):
+        """Load hardware model from device information."""
+        try:
+            self.get(self.hardware, device_info["model"])
+        except ObjectNotFound:
+            new_hardware = self.hardware(
+                model=device_info["model"],
+                uuid=None,
+            )
+            self.add(new_hardware)
 
     def load_firewall_ports(self, device: MerakiDevice, serial: str, network_id: str):
         """Load ports of a firewall, cellular, or teleworker device from Meraki dashboard into DiffSync models."""
@@ -138,12 +157,18 @@ class MerakiAdapter(DiffSync):
                 if port_uplink_settings["svis"]["ipv4"]["assignmentMode"] == "static":
                     port_svis = port_uplink_settings["svis"]["ipv4"]
                     prefix = ipaddress_interface(ip=port_svis["address"], attr="network.with_prefixlen")
+                    self.load_prefix(
+                        location=self.conn.network_map[network_id]["name"],
+                        prefix=prefix,
+                    )
                     self.load_ipaddress(
                         address=port_svis["address"],
-                        dev_name=device.name,
-                        location=self.conn.network_map[network_id]["name"],
-                        port=port,
                         prefix=prefix,
+                    )
+                    self.load_ipassignment(
+                        address=port_svis["address"],
+                        dev_name=device.name,
+                        port=port,
                         primary=bool(uplink_status == "Active" and not primary_found),
                     )
                 if uplink_status == "Active":
@@ -191,12 +216,18 @@ class MerakiAdapter(DiffSync):
                         ip=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(netmask=mgmt_ports[port]['staticSubnetMask'])}",
                         attr="network.with_prefixlen",
                     )
+                    self.load_prefix(
+                        location=self.conn.network_map[self.device_map[device.name]["networkId"]]["name"],
+                        prefix=prefix,
+                    )
                     self.load_ipaddress(
                         address=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(mgmt_ports[port]['staticSubnetMask'])}",
-                        dev_name=device.name,
-                        location=self.conn.network_map[self.device_map[device.name]["networkId"]]["name"],
-                        port=port,
                         prefix=prefix,
+                    )
+                    self.load_ipassignment(
+                        address=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(mgmt_ports[port]['staticSubnetMask'])}",
+                        dev_name=device.name,
+                        port=port,
                         primary=True,
                     )
         if serial in org_switchports:
@@ -239,40 +270,67 @@ class MerakiAdapter(DiffSync):
                         ip=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(netmask=mgmt_ports[port]['staticSubnetMask'])}",
                         attr="network.with_prefixlen",
                     )
+                    self.load_prefix(
+                        location=self.conn.network_map[self.device_map[device.name]["networkId"]]["name"],
+                        prefix=prefix,
+                    )
                     self.load_ipaddress(
                         address=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(mgmt_ports[port]['staticSubnetMask'])}",
-                        dev_name=device.name,
-                        location=self.conn.network_map[self.device_map[device.name]["networkId"]]["name"],
-                        port=port,
                         prefix=prefix,
+                    )
+                    self.load_ipassignment(
+                        address=f"{mgmt_ports[port]['staticIp']}/{netmask_to_cidr(mgmt_ports[port]['staticSubnetMask'])}",
+                        dev_name=device.name,
+                        port=port,
                         primary=True,
                     )
 
-    def load_ipaddress(self, address: str, dev_name: str, location: str, port: str, prefix: str, primary: bool):
-        """Load IPAddresses of devices into DiffSync models."""
+    def load_prefix(self, location: str, prefix: str):
+        """Load Prefixes of devices into DiffSync models."""
+        if self.tenant:
+            namespace = self.tenant.name
+        else:
+            namespace = "Global"
         try:
-            self.get(self.prefix, {"prefix": prefix, "location": location})
+            self.get(self.prefix, {"prefix": prefix, "namespace": namespace})
         except ObjectNotFound:
             new_pf = self.prefix(
                 prefix=prefix,
                 location=location,
+                namespace=namespace,
                 tenant=self.tenant.name if self.tenant else None,
                 uuid=None,
             )
             self.add(new_pf)
+
+    def load_ipaddress(self, address: str, prefix: str):
+        """Load IPAddresses of devices into DiffSync models."""
         try:
             self.get(self.ipaddress, {"address": address, "prefix": prefix})
         except ObjectNotFound:
             new_ip = self.ipaddress(
                 address=address,
-                device=dev_name,
-                port=port,
                 prefix=prefix,
-                primary=primary,
                 tenant=self.tenant.name if self.tenant else None,
                 uuid=None,
             )
             self.add(new_ip)
+
+    def load_ipassignment(self, address: str, dev_name: str, port: str, primary: bool):
+        """Load IPAddressesToInterface of devices into DiffSync models."""
+        namespace = self.tenant.name if self.tenant else "Global"
+        try:
+            self.get(self.ipassignment, {"address": address, "device": dev_name, "namespace": namespace, "port": port})
+        except ObjectNotFound:
+            new_map = self.ipassignment(
+                address=address,
+                namespace=namespace,
+                device=dev_name,
+                port=port,
+                primary=primary,
+                uuid=None,
+            )
+            self.add(new_map)
 
     def load(self):
         """Load data from Meraki into DiffSync models."""
@@ -280,4 +338,5 @@ class MerakiAdapter(DiffSync):
             self.load_networks()
             self.load_devices()
         else:
-            self.job.log_failure(message="Specified organization ID not found in Meraki dashboard.")
+            self.job.logger.error("Specified organization ID not found in Meraki dashboard.")
+            raise Exception("Incorrect Organization ID specified.")

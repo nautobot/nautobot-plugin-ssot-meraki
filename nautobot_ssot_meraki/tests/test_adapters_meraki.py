@@ -1,10 +1,8 @@
 """Test Meraki adapter."""
-import uuid
 from unittest.mock import MagicMock
 
-from django.contrib.contenttypes.models import ContentType
-from nautobot.extras.models import Job, JobResult
-from nautobot.utilities.testing import TransactionTestCase
+from nautobot.extras.models import JobResult
+from nautobot.core.testing import TransactionTestCase
 from nautobot_ssot_meraki.diffsync.adapters.meraki import MerakiAdapter
 from nautobot_ssot_meraki.jobs import MerakiDataSource
 from nautobot_ssot_meraki.tests.fixtures import fixtures as fix
@@ -30,9 +28,9 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.meraki_client.get_org_switchports.return_value = fix.GET_ORG_SWITCHPORTS_RECV_FIXTURE
 
         self.job = MerakiDataSource()
-        self.job.log_warning = MagicMock()
+        self.job.logger.warning = MagicMock()
         self.job.job_result = JobResult.objects.create(
-            name=self.job.class_path, obj_type=ContentType.objects.get_for_model(Job), user=None, job_id=uuid.uuid4()
+            name=self.job.class_path, task_name="fake task", worker="default"
         )
         self.meraki = MerakiAdapter(job=self.job, sync=None, client=self.meraki_client)
 
@@ -68,9 +66,7 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
                 lan_ports.append(f"{port['portId']}__Lab Switch")
         expected_ports = set(wan1_ports + wan2_ports + lan_ports)
         self.assertEqual(expected_ports, {port.get_unique_id() for port in self.meraki.get_all("port")})
-        self.assertEqual(
-            {"10.1.15.0/24__Lab", "10.1.15.0/24__HQ"}, {pf.get_unique_id() for pf in self.meraki.get_all("prefix")}
-        )
+        self.assertEqual({"10.1.15.0/24__Global"}, {pf.get_unique_id() for pf in self.meraki.get_all("prefix")})
         self.assertEqual(
             {
                 "10.1.15.10/24__10.1.15.0/24",
@@ -83,16 +79,16 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         """Validate error thrown when duplicate network attempts to be loaded."""
         self.meraki.load_networks()
         self.meraki.load_networks()
-        self.job.log_warning.assert_called()
-        self.job.log_warning.calls[0].contains(message="Duplicate network Lab found and being skipped.")
-        self.job.log_warning.calls[1].contains(message="Duplicate network HQ found and being skipped.")
+        self.job.logger.warning.assert_called()
+        self.job.logger.warning.calls[0].contains(message="Duplicate network Lab found and being skipped.")
+        self.job.logger.warning.calls[1].contains(message="Duplicate network HQ found and being skipped.")
 
     def test_duplicate_device_loading_error(self):
         """Validate error thrown when duplicate device attempts to be loaded."""
         self.meraki.load_devices()
         self.meraki.load_devices()
-        self.job.log_warning.assert_called()
-        self.job.log_warning.calls[0].contains(message="Duplicate device Lab01 found and being skipped.")
-        self.job.log_warning.calls[1].contains(message="Duplicate device HQ01 found and being skipped.")
-        self.job.log_warning.calls[2].contains(message="Duplicate device Lab Switch found and being skipped.")
-        self.job.log_warning.calls[3].contains(message="Duplicate device HQ AP found and being skipped.")
+        self.job.logger.warning.assert_called()
+        self.job.logger.warning.calls[0].contains(message="Duplicate device Lab01 found and being skipped.")
+        self.job.logger.warning.calls[1].contains(message="Duplicate device HQ01 found and being skipped.")
+        self.job.logger.warning.calls[2].contains(message="Duplicate device Lab Switch found and being skipped.")
+        self.job.logger.warning.calls[3].contains(message="Duplicate device HQ AP found and being skipped.")
