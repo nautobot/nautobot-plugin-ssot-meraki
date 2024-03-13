@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!--next-version-placeholder-->
 
+## v2.0.0 (2024-03-13)
+
+### Feature
+
+* ♻️ Update Nautobot adapter to filter objects load by Tenant if specified in Job form. ([`12d54b9`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/12d54b9e1188f05cefeeb9b75ae8d59eedb862d3))
+* ✨ Add a mapping for IPAddresses to ID to be used for IPAssignment CRUD operations. ([`dda57fa`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/dda57fa2ae9c792d9fd76343656b9c4d116bfb8b))
+* ✨ Add IPAssignment DIffSyncModel to track IP to Interface mappings. Refactored IPAddress model. ([`3295dc9`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/3295dc9585225d612979ee01e228f6cbd25ba400))
+* Update Job to pass SecretsGroup for credentials. ([`2c79570`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/2c79570e07544e8dce3b179b075cd851026d3fc6))
+* ✨ Add System of Record CustomField to Prefix objects. ([`cd6a8fa`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/cd6a8fa2a7f39f066ba2c6ae437eba118534584d))
+* ✨ Add Hardware DiffSync model to track models being imported by SSoT. ([`2fd363e`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/2fd363e74896668b4439c9b73f0178c8d6f0e247))
+
+### Fix
+
+* 🐛 Change Site LocationType to not be nestable ([`5c1ec94`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/5c1ec941a0cb4dc2f80fc854281be15c5a14a7c6))
+* 🐛 Correct location_map to region_map ([`9f06e4a`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/9f06e4a9073d4801186bd7fa88976ad5a6460425))
+* 🐛 Correct key to be a string and not the object! ([`50ade28`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/50ade2896aba183d598c5ab2c7e4fea2385849b7))
+* Correct key to be a string for IPAddress in ipaddr_map ([`de92df5`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/de92df5ac0ddb559d8967e12da1733482a75d1a0))
+* 🐛 Update filter for Prefixes to use Tenant if specified. ([`f933524`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/f9335248566ebe3520ef1737adc12217589e9940))
+* 🐛 Correct check for ipassignment to use device and port for identifiers. ([`bd6e9cf`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/bd6e9cf9699f65a0fdc28a859ee55bf574e75a59))
+* 🐛 Set DiffSyncFlag SKIP_UNMATCHED_DST on Nautobot objects so those objects aren't deleted. ([`6e93132`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/6e931327871be2ac60e62294ec361faac03514fa))
+* 🐛 Add check for IPAddress already being loaded. ([`d324db7`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/d324db7510ebf49e9ba0cffd7d674533f189e329))
+* 🐛 Correct check for IPAddress to use namespace ([`3694650`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/369465011a07d4db0c4c06b59b25e7ea3c31b52c))
+* ♻️ Set device and port as attributes of IPAssignment and update CRUD ops accordingly. ([`a466eb1`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/a466eb140871576a86ddca859f732144a933ea41))
+* 🐛 Redo how primary IP objects_to_create are defined and ensure they're tuples. ([`ff99c45`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/ff99c45abab08d817c56b73cd0b41828649f5124))
+* 🐛 Change check of IPAddress version to use check for colon instead of ip_version attribute. ([`c7d8860`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/c7d88608b4e27e03f1918e278330c476c87c2ba1))
+* 🐛 Correct prefix to be ids and not attrs ([`311ff4f`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/311ff4f18028182395c2429fadd8a7d99249b181))
+* 🐛 Correct namespace to be id and not attrs ([`183bb1a`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/183bb1a4ead35ee53d94791e49932c69eefce84e))
+* 🐛 Specify Global Region as Site parent in creation. ([`1b3c03a`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/1b3c03a9d4fbd11073a0fce5209d79fb5c80ade0))
+* Use defaults with SiteLocationType update_or_create ([`016f214`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/016f214bc930324d4739a4ba6237d0047fd3d283))
+
+### Documentation
+
+* 📝 Add docstring for tenant kwarg ([`3f02eea`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/3f02eea55cfbe81705111b7c6b3c42c5c25b261d))
+
+### Performance
+
+* ♻️ Move logging behind debug toggle ([`d664dc6`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/d664dc69361c02555c478fbfea1093cfa694d9d9))
+* ♻️ Update code to use maps and object_to_create/object_to_delete lists for improving import speed and handling correct order of object deletion. ([`25025fa`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/25025fab0d8813105f52f9ee9a5c66414f7bd27e))
+
 ## v0.7.2 (2023-12-05)
 
 ### Fix
