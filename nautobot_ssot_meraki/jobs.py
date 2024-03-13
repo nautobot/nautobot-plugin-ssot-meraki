@@ -1,6 +1,10 @@
 """Jobs for Meraki SSoT integration."""
+
 from django.conf import settings
-from nautobot.extras.jobs import BooleanVar, Job, ObjectVar
+from nautobot.core.celery import register_jobs
+from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
+from nautobot.extras.jobs import BooleanVar, ObjectVar
+from nautobot.extras.models import ExternalIntegration
 from nautobot.tenancy.models import Tenant
 from nautobot_ssot.jobs.base import DataSource
 from nautobot_ssot_meraki.diffsync.adapters import meraki, nautobot
@@ -12,9 +16,17 @@ PLUGIN_CFG = settings.PLUGINS_CONFIG["nautobot_ssot_meraki"]
 name = "Meraki SSoT"  # pylint: disable=invalid-name
 
 
-class MerakiDataSource(DataSource, Job):
+class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attributes
     """Meraki SSoT Data Source."""
 
+    instance = ObjectVar(
+        model=ExternalIntegration,
+        queryset=ExternalIntegration.objects.all(),
+        description="ExternalIntegration containing information for connecting to Meraki dashboard.",
+        display_field="display",
+        label="Meraki Instance",
+        required=True,
+    )
     debug = BooleanVar(description="Enable for more verbose debug logging", default=False)
     tenant = ObjectVar(model=Tenant, label="Tenant", required=False)
 
@@ -43,20 +55,35 @@ class MerakiDataSource(DataSource, Job):
 
     def load_source_adapter(self):
         """Load data from Meraki into DiffSync models."""
-        client = DashboardClient(logger=self, org_id=PLUGIN_CFG["meraki_org_id"], token=PLUGIN_CFG["meraki_token"])
-        self.source_adapter = meraki.MerakiAdapter(job=self, sync=self.sync, client=client, tenant=self.data["tenant"])
+        _sg = self.instance.secrets_group
+        org_id = _sg.get_secret_value(
+            access_type=SecretsGroupAccessTypeChoices.TYPE_HTTP,
+            secret_type=SecretsGroupSecretTypeChoices.TYPE_USERNAME,
+        )
+        token = _sg.get_secret_value(
+            access_type=SecretsGroupAccessTypeChoices.TYPE_HTTP,
+            secret_type=SecretsGroupSecretTypeChoices.TYPE_TOKEN,
+        )
+        client = DashboardClient(logger=self, org_id=org_id, token=token)
+        self.source_adapter = meraki.MerakiAdapter(job=self, sync=self.sync, client=client, tenant=self.tenant)
         self.source_adapter.load()
 
     def load_target_adapter(self):
         """Load data from Nautobot into DiffSync models."""
-        self.target_adapter = nautobot.NautobotAdapter(job=self, sync=self.sync)
+        self.target_adapter = nautobot.NautobotAdapter(job=self, sync=self.sync, tenant=self.tenant)
         self.target_adapter.load()
 
-    def run(self, data, commit):
-        """Ensure Job form variables are set."""
-        self.commit = commit
-        self.data = data
-        super().run(data, commit)
+    def run(
+        self, dryrun, memory_profiling, instance, debug, tenant, *args, **kwargs
+    ):  # pylint: disable=arguments-differ, too-many-arguments
+        """Perform data synchronization."""
+        self.dryrun = dryrun
+        self.memory_profiling = memory_profiling
+        self.instance = instance
+        self.debug = debug
+        self.tenant = tenant
+        super().run(dryrun - self.dryrun, memory_profiling=self.memory_profiling, *args, **kwargs)
 
 
 jobs = [MerakiDataSource]
+register_jobs(*jobs)

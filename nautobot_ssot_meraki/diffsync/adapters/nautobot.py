@@ -1,47 +1,91 @@
 """Nautobot Adapter for Meraki SSoT plugin."""
 
+from collections import defaultdict
+from typing import Optional
 from diffsync import DiffSync
+from diffsync.enum import DiffSyncModelFlags
 from diffsync.exceptions import ObjectNotFound
-from nautobot.dcim.models import Device, Interface, Site
-from nautobot.ipam.models import Prefix
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import ProtectedError
+from nautobot.dcim.models import Device, DeviceType, Interface, Location, LocationType, Manufacturer, Platform
+from nautobot.extras.models import Note, Relationship, RelationshipAssociation, Role, Status
+from nautobot.ipam.models import IPAddress, IPAddressToInterface, Namespace, Prefix
+from nautobot.tenancy.models import Tenant
 from nautobot_ssot_meraki.diffsync.models.nautobot import (
     NautobotDevice,
+    NautobotHardware,
     NautobotNetwork,
     NautobotPort,
     NautobotPrefix,
     NautobotIPAddress,
+    NautobotIPAssignment,
 )
-from nautobot_ssot_meraki.utils.nautobot import get_tag_strings
+from nautobot_ssot_meraki.utils.nautobot import get_tag_strings, get_cf_version_map, get_dlc_version_map
+
+
+try:
+    import nautobot_device_lifecycle_mgmt  # noqa: F401
+
+    LIFECYCLE_MGMT = True
+except ImportError:
+    print("Device Lifecycle plugin isn't installed so will revert to CustomField for OS version.")
+    LIFECYCLE_MGMT = False
 
 
 class NautobotAdapter(DiffSync):
     """DiffSync adapter for Nautobot."""
 
     network = NautobotNetwork
+    hardware = NautobotHardware
     device = NautobotDevice
     port = NautobotPort
     prefix = NautobotPrefix
     ipaddress = NautobotIPAddress
+    ipassignment = NautobotIPAssignment
 
-    top_level = ["network", "device", "prefix", "ipaddress"]
+    top_level = ["network", "hardware", "device", "prefix", "ipaddress", "ipassignment"]
 
-    def __init__(self, *args, job, sync=None, **kwargs):
+    status_map = {}
+    tenant_map = {}
+    locationtype_map = {}
+    region_map = {}
+    site_map = {}
+    platform_map = {}
+    manufacturer_map = {}
+    devicerole_map = {}
+    devicetype_map = {}
+    device_map = {}
+    port_map = {}
+    namespace_map = {}
+    prefix_map = {}
+    ipaddr_map = {}
+    relationship_map = {}
+    contenttype_map = {}
+    version_map = {}
+
+    def __init__(self, *args, job, sync=None, tenant: Optional[Tenant] = None, **kwargs):
         """Initialize Nautobot.
 
         Args:
             job (object): Nautobot job.
             sync (object, optional): Nautobot DiffSync. Defaults to None.
+            tenant (Tenant, optional): Nautobot Tenant to assign to loaded objects. Defaults to None.
         """
         super().__init__(*args, **kwargs)
         self.job = job
         self.sync = sync
+        self.tenant = tenant
+        self.objects_to_create = defaultdict(list)
+        self.objects_to_delete = defaultdict(list)
 
     def load_sites(self):
         """Load Site data from Nautobot into DiffSync model."""
-        for site in Site.objects.all():
+        site_type = LocationType.objects.get(name="Site")
+        for site in Location.objects.filter(location_type=site_type):
             try:
                 self.get(self.network, site.name)
             except ObjectNotFound:
+                self.site_map[site.name] = site.id
                 new_site = self.network(
                     name=site.name,
                     notes="",
@@ -55,20 +99,38 @@ class NautobotAdapter(DiffSync):
                     new_site.notes = note.note.rstrip()
                 self.add(new_site)
 
+    def load_devicetypes(self):
+        """Load DeviceType data from Nautobot into DiffSync model."""
+        for dt in DeviceType.objects.filter(manufacturer__name="Cisco Meraki"):
+            try:
+                self.get(self.hardware, dt.model)
+            except ObjectNotFound:
+                new_dt = self.hardware(model=dt.model, uuid=dt.id)
+                if self.tenant:
+                    new_dt.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
+                self.add(new_dt)
+                self.devicetype_map[dt.model] = dt.id
+
     def load_devices(self):
         """Load Device data from Nautobot into DiffSync model."""
-        for dev in Device.objects.filter(_custom_field_data__system_of_record="Meraki SSoT"):
+        if self.tenant:
+            devices = Device.objects.filter(tenant=self.tenant)
+        else:
+            devices = Device.objects.filter(_custom_field_data__system_of_record="Meraki SSoT")
+        for dev in devices:
             try:
                 self.get(self.device, dev.name)
             except ObjectNotFound:
+                self.device_map[dev.name] = dev.id
+                self.port_map[dev.name] = {}
                 new_dev = self.device(
                     name=dev.name,
                     serial=dev.serial,
                     status=dev.status.name,
-                    role=dev.device_role.name,
+                    role=dev.role.name,
                     model=dev.device_type.model,
                     notes="",
-                    network=dev.site.name,
+                    network=dev.location.name,
                     tenant=dev.tenant.name if dev.tenant else None,
                     uuid=dev.id,
                     version=dev._custom_field_data["os_version"] if dev._custom_field_data.get("os_version") else "",
@@ -76,14 +138,21 @@ class NautobotAdapter(DiffSync):
                 if dev.notes:
                     note = dev.notes.last()
                     new_dev.notes = note.note.rstrip()
+                if self.tenant:
+                    new_dev.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
                 self.add(new_dev)
 
     def load_ports(self):
         """Load Port data from Nautobot into DiffSync model."""
-        for intf in Interface.objects.filter(_custom_field_data__system_of_record="Meraki SSoT"):
+        if self.tenant:
+            ports = Interface.objects.filter(device__tenant=self.tenant)
+        else:
+            ports = Interface.objects.filter(_custom_field_data__system_of_record="Meraki SSoT")
+        for intf in ports:
             try:
                 self.get(self.port, {"name": intf.name, "device": intf.device.name})
             except ObjectNotFound:
+                self.port_map[intf.device.name][intf.name] = intf.id
                 new_port = self.port(
                     name=intf.name,
                     device=intf.device.name,
@@ -94,40 +163,172 @@ class NautobotAdapter(DiffSync):
                     tagging=False if intf.mode == "access" else True,
                     uuid=intf.id,
                 )
+                if self.tenant:
+                    new_port.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
                 self.add(new_port)
                 dev = self.get(self.device, intf.device.name)
                 dev.add_child(new_port)
-                if len(intf.ip_addresses.all()) > 0:
-                    for ipaddr in intf.ip_addresses.all():
-                        pf_found = Prefix.objects.net_contains(ipaddr.host).last()
-                        if pf_found:
-                            try:
-                                self.get(
-                                    self.prefix, {"prefix": str(pf_found.prefix), "location": intf.device.site.name}
-                                )
-                            except ObjectNotFound:
-                                new_pf = self.prefix(
-                                    prefix=str(pf_found.prefix),
-                                    location=intf.device.site.name,
-                                    tenant=pf_found.tenant.name if pf_found.tenant else None,
-                                    uuid=pf_found.id,
-                                )
-                                self.add(new_pf)
-                        else:
-                            self.job.log_warning(message=f"Unable to find prefix for IP Address {ipaddr.host}.")
-                        new_ip = self.ipaddress(
-                            address=str(ipaddr.address),
-                            device=intf.device.name,
-                            port=intf.name,
-                            prefix=str(pf_found.prefix) if pf_found else "",
-                            primary=hasattr(ipaddr, "primary_ip4_for") or hasattr(ipaddr, "primary_ip6_for"),
-                            tenant=intf.device.tenant.name if intf.device.tenant else None,
-                            uuid=ipaddr.id,
-                        )
-                        self.add(new_ip)
+
+    def load_prefixes(self):
+        """Load Prefixes from Nautobot into DiffSync models."""
+        if self.tenant:
+            prefixes = Prefix.objects.filter(tenant=self.tenant)
+        else:
+            prefixes = Prefix.objects.filter(_custom_field_data__system_of_record="Meraki SSoT")
+        for prefix in prefixes:
+            new_pf = self.prefix(
+                prefix=str(prefix.prefix),
+                location=prefix.location.name if prefix.location else "",
+                namespace=prefix.namespace.name,
+                tenant=prefix.tenant.name if prefix.tenant else None,
+                uuid=prefix.id,
+            )
+            if self.tenant:
+                new_pf.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
+            self.add(new_pf)
+            self.prefix_map[str(prefix.prefix)] = prefix.id
+
+    def load_ipaddresses(self):
+        """Load IPAddresses from Nautobot into DiffSync models."""
+        if self.tenant:
+            addresses = IPAddress.objects.filter(tenant=self.tenant)
+        else:
+            addresses = IPAddress.objects.filter(_custom_field_data__system_of_record="Meraki SSoT")
+        for ipaddr in addresses:
+            if str(ipaddr.parent.namespace) not in self.ipaddr_map:
+                self.ipaddr_map[str(ipaddr.parent.namespace)] = {}
+            self.ipaddr_map[str(ipaddr.parent.namespace)][str(ipaddr.address)] = ipaddr.id
+            new_ip = self.ipaddress(
+                address=str(ipaddr.address),
+                prefix=str(ipaddr.parent.prefix) if ipaddr.parent else "",
+                tenant=ipaddr.tenant.name if ipaddr.tenant else None,
+                uuid=ipaddr.id,
+            )
+            if self.tenant:
+                new_ip.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
+            self.add(new_ip)
+
+    def load_ipassignments(self):
+        """Load IPAddressToInterface from Nautobot into DiffSync models."""
+        if self.tenant:
+            mappings = IPAddressToInterface.objects.filter(ip_address__tenant=self.tenant)
+        else:
+            mappings = IPAddressToInterface.objects.filter(
+                ip_address___custom_field_data__system_of_record="Meraki SSoT"
+            )
+        for ipassignment in mappings:
+            new_map = self.ipassignment(
+                address=str(ipassignment.ip_address.address),
+                namespace=ipassignment.ip_address.parent.namespace.name,
+                device=ipassignment.interface.device.name,
+                port=ipassignment.interface.name,
+                primary=len(ipassignment.ip_address.primary_ip4_for.all()) > 0
+                or len(ipassignment.ip_address.primary_ip6_for.all()) > 0,
+                uuid=ipassignment.id,
+            )
+            if self.tenant:
+                new_map.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
+            self.add(new_map)
+
+    def sync_complete(self, source: DiffSync, *args, **kwargs):
+        """Clean up function for DiffSync sync.
+
+        Once the sync is complete, this function runs deleting any objects
+        from Nautobot that need to be deleted in a specific order.
+
+        Args:
+            source (DiffSync): DiffSync
+        """
+        for grouping in (
+            "ipaddrs",
+            "prefixes",
+            "ports",
+            "devices",
+            "devicetypes",
+        ):
+            for nautobot_object in self.objects_to_delete[grouping]:
+                try:
+                    if self.job.debug:
+                        self.job.logger.info(f"Deleting {nautobot_object}.")
+                    nautobot_object.delete()
+                except ProtectedError:
+                    self.job.logger.warning(f"Deletion failed protected object: {nautobot_object}")
+            self.objects_to_delete[grouping] = []
+
+        if len(self.objects_to_create["devicetypes"]) > 0:
+            self.job.logger.info("Performing bulk create of DeviceTypes in Nautobot")
+            DeviceType.objects.bulk_create(self.objects_to_create["devicetypes"], batch_size=250)
+        if len(self.objects_to_create["devices"]) > 0:
+            self.job.logger.info("Performing bulk create of Devices in Nautobot")
+            Device.objects.bulk_create(self.objects_to_create["devices"], batch_size=250)
+        if len(self.objects_to_create["ports"]) > 0:
+            self.job.logger.info("Performing bulk create of Interfaces in Nautobot")
+            Interface.objects.bulk_create(self.objects_to_create["ports"], batch_size=250)
+        if len(self.objects_to_create["prefixes"]) > 0:
+            self.job.logger.info("Performing bulk create of Prefixes in Nautobot")
+            Prefix.objects.bulk_create(self.objects_to_create["prefixes"], batch_size=250)
+        if len(self.objects_to_create["ipaddrs"]) > 0:
+            self.job.logger.info("Performing bulk create of IP Addresses in Nautobot")
+            IPAddress.objects.bulk_create(self.objects_to_create["ipaddrs"], batch_size=250)
+        if len(self.objects_to_create["ipaddrs-to-prefixes"]) > 0:
+            self.job.logger.info("Assigning parent Prefix to IPAddresses with bulk_update.")
+            assigned_parents = []
+            for pair in self.objects_to_create["ipaddrs-to-prefixes"]:
+                ipaddr = pair[0]
+                ipaddr.parent_id = pair[1]
+                assigned_parents.append(ipaddr)
+            IPAddress.objects.bulk_update(assigned_parents, ["parent_id"], batch_size=250)
+        if len(self.objects_to_create["ipaddrs-to-intfs"]) > 0:
+            self.job.logger.info("Performing assignment of IPAddress to Port.")
+            IPAddressToInterface.objects.bulk_create(self.objects_to_create["ipaddrs-to-intfs"], batch_size=250)
+        if len(self.objects_to_create["device_primary_ip4"]) > 0:
+            self.job.logger.info("Performing bulk update of IPv4 addresses in Nautobot.")
+            device_primary_ip_objs = []
+            for d in self.objects_to_create["device_primary_ip4"]:
+                dev = Device.objects.get(id=d[0])
+                dev.primary_ip4_id = d[1]
+                device_primary_ip_objs.append(dev)
+            Device.objects.bulk_update(device_primary_ip_objs, ["primary_ip4_id"], batch_size=250)
+        if len(self.objects_to_create["device_primary_ip6"]) > 0:
+            self.job.logger.info("Performing bulk update of IPv6 addresses in Nautobot.")
+            device_primary_ip_objs = []
+            for d in self.objects_to_create["device_primary_ip6"]:
+                dev = Device.objects.get(id=d[0])
+                dev.primary_ip6_id = d[1]
+                device_primary_ip_objs.append(dev)
+            Device.objects.bulk_update(device_primary_ip_objs, ["primary_ip6_id"], batch_size=250)
+        if LIFECYCLE_MGMT:
+            if len(self.objects_to_create["relationship_assocs"]) > 0:
+                self.job.logger.info("Creating Relationships between Devices and Software Version")
+                RelationshipAssociation.objects.bulk_create(
+                    self.objects_to_create["relationship_assocs"], batch_size=250
+                )
+        if len(self.objects_to_create["notes"]) > 0:
+            self.job.logger.info("Performing bulk create of Notes in Nautobot")
+            Note.objects.bulk_create(self.objects_to_create["notes"], batch_size=250)
+        return super().sync_complete(source, *args, **kwargs)
 
     def load(self):
         """Load data from Nautobot into DiffSync models."""
+        self.status_map = {s.name: s.id for s in Status.objects.only("id", "name")}
+        self.locationtype_map = {lt.name: lt.id for lt in LocationType.objects.only("id", "name")}
+        self.region_map["Global Region"] = Location.objects.get(name="Global Region").id
+        self.platform_map = {p.name: p.id for p in Platform.objects.only("id", "name")}
+        self.manufacturer_map = {m.name: m.id for m in Manufacturer.objects.only("id", "name")}
+        self.devicerole_map = {d.name: d.id for d in Role.objects.only("id", "name")}
+        self.namespace_map = {ns.name: ns.id for ns in Namespace.objects.only("id", "name")}
+        self.relationship_map = {r.label: r.id for r in Relationship.objects.only("id", "label")}
+        self.contenttype_map = {c.model: c.id for c in ContentType.objects.only("id", "model")}
+        if LIFECYCLE_MGMT:
+            self.version_map = get_dlc_version_map()
+        else:
+            self.version_map = get_cf_version_map()
+        self.tenant_map = {t.name: t.id for t in Tenant.objects.only("id", "name")}
+
         self.load_sites()
+        self.load_devicetypes()
         self.load_devices()
         self.load_ports()
+        self.load_prefixes()
+        self.load_ipaddresses()
+        self.load_ipassignments()

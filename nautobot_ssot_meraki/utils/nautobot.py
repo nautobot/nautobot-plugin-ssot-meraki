@@ -47,14 +47,14 @@ def add_software_lcm(version: str):
 
 def assign_version_to_device(diffsync, device, software_lcm):
     """Add Relationship between Device and SoftwareLCM."""
-    software_relation = Relationship.objects.get(name="Software on Device")
+    software_relation = Relationship.objects.get(label="Software on Device")
     relations = device.get_relationships()
     for _, relationships in relations.items():
         for relationship, queryset in relationships.items():
             if relationship == software_relation:
-                if diffsync.job.kwargs.get("debug"):
-                    diffsync.job.log_warning(
-                        message=f"Deleting Software Version Relationships for {device.name} to assign a new version."
+                if diffsync.job.debug:
+                    diffsync.job.logger.warning(
+                        f"Deleting Software Version Relationships for {device.name} to assign a new version."
                     )
                 queryset.delete()
 
@@ -65,4 +65,37 @@ def assign_version_to_device(diffsync, device, software_lcm):
         destination_type=ContentType.objects.get_for_model(Device),
         destination=device,
     )
-    new_assoc.validated_save()
+    diffsync.objects_to_create["relationship_assocs"].append(new_assoc)
+
+
+def get_dlc_version_map():
+    """Method to create nested dictionary of Software versions mapped to their ID along with Platform.
+
+    This should only be used if the Device Lifecycle plugin is found to be installed.
+
+    Returns:
+        dict: Nested dictionary of versions mapped to their ID and to their Platform.
+    """
+    version_map = {}
+    for ver in SoftwareLCM.objects.only("id", "device_platform", "version"):
+        if ver.device_platform.name not in version_map:
+            version_map[ver.device_platform.name] = {}
+        version_map[ver.device_platform.name][ver.version] = ver.id
+    return version_map
+
+
+def get_cf_version_map():
+    """Method to create nested dictionary of Software versions mapped to their ID along with Platform.
+
+    This should only be used if the Device Lifecycle plugin is not found. It will instead use custom field "OS Version".
+
+    Returns:
+        dict: Nested dictionary of versions mapped to their ID and to their Platform.
+    """
+    version_map = {}
+    for dev in Device.objects.only("id", "platform", "_custom_field_data"):
+        if dev.platform.name not in version_map:
+            version_map[dev.platform.name] = {}
+        if "os_version" in dev.custom_field_data:
+            version_map[dev.platform.name][dev.custom_field_data["os_version"]] = dev.id
+    return version_map
