@@ -1,4 +1,5 @@
 """Utility functions for working with Nautobot."""
+
 from typing import List
 from taggit.managers import TaggableManager
 from django.contrib.contenttypes.models import ContentType
@@ -33,7 +34,7 @@ def get_tag_strings(list_tags: TaggableManager) -> List[str]:
 
 def add_software_lcm(version: str):
     """Add OS Version as SoftwareLCM if Device Lifecycle Plugin found."""
-    _platform = Platform.objects.get(name="Meraki")
+    _platform = Platform.objects.get(network_driver="cisco_meraki")
     try:
         os_ver = SoftwareLCM.objects.get(device_platform=_platform, version=version)
     except SoftwareLCM.DoesNotExist:
