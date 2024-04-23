@@ -63,7 +63,7 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         cisco_manu = Manufacturer.objects.get(name="Cisco Meraki")
         cisco_manu.validated_save()
 
-        meraki_plat = Platform.objects.get(name="Meraki")
+        meraki_plat = Platform.objects.get(name="Cisco Meraki")
 
         mx84 = DeviceType.objects.create(model="MX84", manufacturer=cisco_manu)
         mx84.validated_save()
