@@ -107,7 +107,7 @@ class NautobotDevice(Device):
             diffsync.devicerole_map[attrs["role"]] = dev_role.id
         new_device = NewDevice(
             name=ids["name"],
-            platform_id=diffsync.platform_map["Meraki"],
+            platform_id=diffsync.platform_map["Cisco Meraki"],
             serial=attrs["serial"],
             status_id=diffsync.status_map[attrs["status"]],
             role_id=diffsync.devicerole_map[attrs["role"]],
