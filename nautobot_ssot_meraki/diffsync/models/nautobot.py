@@ -246,7 +246,7 @@ class NautobotPrefix(Prefix):
         """Create Prefix in Nautobot from NautobotPrefix object."""
         new_pf = OrmPrefix(
             prefix=ids["prefix"],
-            location_id=diffsync.site_map[attrs["location"]],
+            location=diffsync.site_map[attrs["location"]],
             namespace_id=diffsync.namespace_map[ids["namespace"]],
             status_id=diffsync.status_map["Active"],
             tenant_id=diffsync.tenant_map[attrs["tenant"]] if attrs.get("tenant") else None,
@@ -262,7 +262,7 @@ class NautobotPrefix(Prefix):
         prefix = OrmPrefix.objects.get(id=self.uuid)
         if "location" in attrs:
             if attrs.get("location"):
-                prefix.location_id = self.diffsync.site_map[attrs["location"]]
+                prefix.location = self.diffsync.site_map[attrs["location"]]
             else:
                 prefix.location = None
         if "tenant" in attrs:
