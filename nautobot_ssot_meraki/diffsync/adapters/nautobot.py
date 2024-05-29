@@ -123,6 +123,17 @@ class NautobotAdapter(DiffSync):
             except ObjectNotFound:
                 self.device_map[dev.name] = dev.id
                 self.port_map[dev.name] = {}
+                version = dev._custom_field_data["os_version"]
+                if LIFECYCLE_MGMT:
+                    try:
+                        software_relation = Relationship.objects.get(label="Software on Device")
+                        relationship = RelationshipAssociation.objects.get(
+                            relationship=software_relation, destination_id=dev.id
+                        )
+                        version = relationship.source.version
+                    except RelationshipAssociation.DoesNotExist:
+                        self.job.logger.info(f"Unable to find DLC Software version for {dev.name}.")
+                        version = ""
                 new_dev = self.device(
                     name=dev.name,
                     serial=dev.serial,
@@ -133,7 +144,7 @@ class NautobotAdapter(DiffSync):
                     network=dev.location.name,
                     tenant=dev.tenant.name if dev.tenant else None,
                     uuid=dev.id,
-                    version=dev._custom_field_data["os_version"] if dev._custom_field_data.get("os_version") else "",
+                    version=version,
                 )
                 if dev.notes:
                     note = dev.notes.last()
