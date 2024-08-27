@@ -90,7 +90,7 @@ class NautobotAdapter(DiffSync):
                     name=site.name,
                     notes="",
                     tags=get_tag_strings(list_tags=site.tags),
-                    timezone=site.time_zone.zone if site.time_zone else None,
+                    timezone=str(site.time_zone) if site.time_zone else None,
                     tenant=site.tenant.name if site.tenant else None,
                     uuid=site.id,
                 )
