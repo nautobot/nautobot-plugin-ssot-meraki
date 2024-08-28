@@ -1,6 +1,7 @@
 """Jobs for Meraki SSoT integration."""
 
 from django.conf import settings
+from diffsync.enum import DiffSyncFlags
 from nautobot.core.celery import register_jobs
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
 from nautobot.extras.jobs import BooleanVar, ObjectVar
@@ -34,6 +35,8 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         """Initialize job objects."""
         super().__init__()
         self.data = None
+        self.diffsync_flags = DiffSyncFlags.CONTINUE_ON_FAILURE
+
 
     class Meta:  # pylint: disable=too-few-public-methods
         """Meta data for Meraki."""
