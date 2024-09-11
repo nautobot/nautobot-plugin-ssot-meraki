@@ -51,12 +51,25 @@ class MerakiAdapter(DiffSync):
     def load_networks(self):
         """Load networks from Meraki dashboard into DiffSync models."""
         for net in self.conn.get_org_networks():
+            parent_name, parent_loctype = None, None
+            if self.job.network_loctype.parent:
+                parent_loctype = self.job.network_loctype.parent.name
+                if self.job.parent_location:
+                    parent_name = self.job.parent_location.name
+                elif self.job.location_map and net in self.job.location_map:
+                    parent_name = self.job.location_map[net]["parent"]
+                else:
+                    self.job.logger.error(f"Parent Location is required for {self.job.network_loctype.name} but can't determine parent to be assigned to {net}.")
+                    continue
             try:
-                self.get(self.network, net["name"])
+                self.get(self.network, {"name": net["name"], "location_type": self.job.network_loctype.name, "parent": parent_name, "parent_loctype": parent_loctype})
                 self.job.logger.warning(f"Duplicate network {net['name']} found and being skipped.")
             except ObjectNotFound:
                 new_network = self.network(
                     name=net["name"],
+                    location_type=self.job.network_loctype.name,
+                    parent=parent_name,
+                    parent_loctype=parent_loctype,
                     timezone=net["timeZone"],
                     notes=net["notes"].rstrip() if net.get("notes") else "",
                     tags=net["tags"],
