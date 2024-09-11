@@ -3,11 +3,14 @@
 from django.conf import settings
 from diffsync.enum import DiffSyncFlags
 from nautobot.core.celery import register_jobs
+from nautobot.dcim.models import Location, LocationType
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
-from nautobot.extras.jobs import BooleanVar, ObjectVar
+from nautobot.extras.jobs import BooleanVar, ObjectVar, JSONVar
 from nautobot.extras.models import ExternalIntegration
 from nautobot.tenancy.models import Tenant
+
 from nautobot_ssot.jobs.base import DataSource
+from nautobot_ssot_meraki.exceptions import JobException
 from nautobot_ssot_meraki.diffsync.adapters import meraki, nautobot
 from nautobot_ssot_meraki.utils.meraki import DashboardClient
 
@@ -28,6 +31,28 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         label="Meraki Instance",
         required=True,
     )
+    network_loctype = ObjectVar(
+        model=LocationType,
+        queryset=LocationType.objects.all(),
+        description="LocationType to use for imported Networks.",
+        display_field="display",
+        label="Network LocationType",
+        required=True,
+    )
+    parent_location = ObjectVar(
+        model=Location,
+        queryset=Location.objects.all(),
+        description="Default parent Location to assign imported Networks as.",
+        display_field="display",
+        label="Parent Location",
+        required=False,
+    )
+    location_map = JSONVar(
+        label="Location Mapping",
+        required=False,
+        default={},
+        description="Map of information regarding Networks in Meraki and their parent Location(s).",
+    )
     debug = BooleanVar(description="Enable for more verbose debug logging", default=False)
     tenant = ObjectVar(model=Tenant, label="Tenant", required=False)
 
@@ -36,7 +61,6 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         super().__init__()
         self.data = None
         self.diffsync_flags = DiffSyncFlags.CONTINUE_ON_FAILURE
-
 
     class Meta:  # pylint: disable=too-few-public-methods
         """Meta data for Meraki."""
@@ -56,8 +80,18 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         """List describing the data mappings involved in this DataSource."""
         return ()
 
+    def validate_settings(self):
+        """Confirm the settings in the Job form are valid."""
+        if self.network_loctype.parent and (not self.parent_location and (not self.location_map or not all("parent" in value for value in self.location_map.values()))):
+            network_loctype = self.network_loctype.name
+            self.logger.error(
+                f"{network_loctype} requires a parent Location be provided when creating {network_loctype} Locations and the Parent Location and Location Mapping fields are undefined."
+            )
+            raise JobException(message="Parent Location is required but undefined in Job form.")
+
     def load_source_adapter(self):
         """Load data from Meraki into DiffSync models."""
+        self.validate_settings()
         _sg = self.instance.secrets_group
         org_id = _sg.get_secret_value(
             access_type=SecretsGroupAccessTypeChoices.TYPE_HTTP,
@@ -83,6 +117,9 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         self.dryrun = dryrun
         self.memory_profiling = memory_profiling
         self.instance = instance
+        self.network_loctype = kwargs["network_loctype"]
+        self.parent_location = kwargs["parent_location"]
+        self.location_map = kwargs["location_map"]
         self.debug = debug
         self.tenant = tenant
         super().run(dryrun - self.dryrun, memory_profiling=self.memory_profiling, *args, **kwargs)
