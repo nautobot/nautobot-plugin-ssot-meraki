@@ -82,7 +82,10 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
 
     def validate_settings(self):
         """Confirm the settings in the Job form are valid."""
-        if self.network_loctype.parent and (not self.parent_location and (not self.location_map or not all("parent" in value for value in self.location_map.values()))):
+        if self.network_loctype.parent and (
+            not self.parent_location
+            and (not self.location_map or not all("parent" in value for value in self.location_map.values()))
+        ):
             network_loctype = self.network_loctype.name
             self.logger.error(
                 f"{network_loctype} requires a parent Location be provided when creating {network_loctype} Locations and the Parent Location and Location Mapping fields are undefined."
