@@ -83,11 +83,14 @@ class NautobotAdapter(DiffSync):
         site_type = LocationType.objects.get(name="Site")
         for site in Location.objects.filter(location_type=site_type):
             try:
-                self.get(self.network, site.name)
+                self.get(self.network, {"name": site.name, "location_type": site.location.location_type.name, "parent": site.parent.name if site.parent else None, "parent_loctype": site.parent.location_type.name if site.parent else None})
             except ObjectNotFound:
                 self.site_map[site.name] = site.id
                 new_site = self.network(
                     name=site.name,
+                    location_type=site.location.location_type.name,
+                    parent=site.parent.name if site.parent else None,
+                    parent_loctype=site.parent.location_type.name if site.parent else None,
                     notes="",
                     tags=get_tag_strings(list_tags=site.tags),
                     timezone=str(site.time_zone) if site.time_zone else None,
