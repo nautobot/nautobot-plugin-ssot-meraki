@@ -59,10 +59,20 @@ class MerakiAdapter(DiffSync):
                 elif self.job.location_map and net in self.job.location_map:
                     parent_name = self.job.location_map[net]["parent"]
                 else:
-                    self.job.logger.error(f"Parent Location is required for {self.job.network_loctype.name} but can't determine parent to be assigned to {net}.")
+                    self.job.logger.error(
+                        f"Parent Location is required for {self.job.network_loctype.name} but can't determine parent to be assigned to {net}."
+                    )
                     continue
             try:
-                self.get(self.network, {"name": net["name"], "location_type": self.job.network_loctype.name, "parent": parent_name, "parent_loctype": parent_loctype})
+                self.get(
+                    self.network,
+                    {
+                        "name": net["name"],
+                        "location_type": self.job.network_loctype.name,
+                        "parent": parent_name,
+                        "parent_loctype": parent_loctype,
+                    },
+                )
                 self.job.logger.warning(f"Duplicate network {net['name']} found and being skipped.")
             except ObjectNotFound:
                 new_network = self.network(
