@@ -42,6 +42,7 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
     parent_location = ObjectVar(
         model=Location,
         queryset=Location.objects.all(),
+        query_params={"location_type": "$network_loctype.parent"},
         description="Default parent Location to assign imported Networks as.",
         display_field="display",
         label="Parent Location",
