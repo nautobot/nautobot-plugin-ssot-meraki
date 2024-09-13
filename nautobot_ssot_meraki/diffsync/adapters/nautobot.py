@@ -89,7 +89,6 @@ class NautobotAdapter(DiffSync):
                         "name": site.name,
                         "location_type": site.location.location_type.name,
                         "parent": site.parent.name if site.parent else None,
-                        "parent_loctype": site.parent.location_type.name if site.parent else None,
                     },
                 )
             except ObjectNotFound:
@@ -98,7 +97,6 @@ class NautobotAdapter(DiffSync):
                     name=site.name,
                     location_type=site.location.location_type.name,
                     parent=site.parent.name if site.parent else None,
-                    parent_loctype=site.parent.location_type.name if site.parent else None,
                     notes="",
                     tags=get_tag_strings(list_tags=site.tags),
                     timezone=str(site.time_zone) if site.time_zone else None,

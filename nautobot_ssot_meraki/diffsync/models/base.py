@@ -2,6 +2,7 @@
 
 from typing import List, Optional
 from uuid import UUID
+
 from diffsync import DiffSyncModel
 from diffsync.enum import DiffSyncModelFlags
 
@@ -12,14 +13,13 @@ class Network(DiffSyncModel):
     model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
 
     _modelname = "network"
-    _identifiers = ("name", "parent", "location_type", "parent_loctype")
+    _identifiers = ("name", "parent", "location_type")
     _attributes = ("timezone", "notes", "tags", "tenant")
     _children = {}
 
     name: str
     location_type: str
     parent: Optional[str]
-    parent_loctype: Optional[str]
     timezone: Optional[str]
     notes: Optional[str]
     tags: Optional[List[str]]
