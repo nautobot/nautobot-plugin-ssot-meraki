@@ -332,13 +332,20 @@ class NautobotAdapter(DiffSync):
         """Load data from Nautobot into DiffSync models."""
         self.status_map = {s.name: s.id for s in Status.objects.only("id", "name")}
         self.locationtype_map = {lt.name: lt.id for lt in LocationType.objects.only("id", "name")}
-        self.region_map["Global Region"] = Location.objects.get(name="Global Region").id
         self.platform_map = {p.name: p.id for p in Platform.objects.only("id", "name")}
         self.manufacturer_map = {m.name: m.id for m in Manufacturer.objects.only("id", "name")}
         self.devicerole_map = {d.name: d.id for d in Role.objects.only("id", "name")}
         self.namespace_map = {ns.name: ns.id for ns in Namespace.objects.only("id", "name")}
         self.relationship_map = {r.label: r.id for r in Relationship.objects.only("id", "label")}
         self.contenttype_map = {c.model: c.id for c in ContentType.objects.only("id", "model")}
+
+        if self.job.parent_location:
+            self.region_map[self.job.parent_location] = Location.objects.get(name=self.job.parent_location).id
+        else:
+            self.region_map = {
+                loc_data["parent"]: Location.objects.get(name=loc_data["parent"]).id
+                for _, loc_data in self.job.location_map.items()
+            }
         if LIFECYCLE_MGMT:
             self.version_map = get_dlc_version_map()
         else:
