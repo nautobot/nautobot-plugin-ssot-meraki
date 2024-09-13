@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from typing import Optional
+
 from diffsync import DiffSync
 from diffsync.enum import DiffSyncModelFlags
 from diffsync.exceptions import ObjectNotFound
@@ -11,17 +12,17 @@ from nautobot.dcim.models import Device, DeviceType, Interface, Location, Locati
 from nautobot.extras.models import Note, Relationship, RelationshipAssociation, Role, Status
 from nautobot.ipam.models import IPAddress, IPAddressToInterface, Namespace, Prefix
 from nautobot.tenancy.models import Tenant
+
 from nautobot_ssot_meraki.diffsync.models.nautobot import (
     NautobotDevice,
     NautobotHardware,
+    NautobotIPAddress,
+    NautobotIPAssignment,
     NautobotNetwork,
     NautobotPort,
     NautobotPrefix,
-    NautobotIPAddress,
-    NautobotIPAssignment,
 )
-from nautobot_ssot_meraki.utils.nautobot import get_tag_strings, get_cf_version_map, get_dlc_version_map
-
+from nautobot_ssot_meraki.utils.nautobot import get_cf_version_map, get_dlc_version_map, get_tag_strings
 
 try:
     import nautobot_device_lifecycle_mgmt  # noqa: F401
@@ -87,7 +88,7 @@ class NautobotAdapter(DiffSync):
                     self.network,
                     {
                         "name": site.name,
-                        "location_type": site.location.location_type.name,
+                        "location_type": site.location_type.name,
                         "parent": site.parent.name if site.parent else None,
                     },
                 )
@@ -95,7 +96,7 @@ class NautobotAdapter(DiffSync):
                 self.site_map[site.name] = site.id
                 new_site = self.network(
                     name=site.name,
-                    location_type=site.location.location_type.name,
+                    location_type=site.location_type.name,
                     parent=site.parent.name if site.parent else None,
                     notes="",
                     tags=get_tag_strings(list_tags=site.tags),
