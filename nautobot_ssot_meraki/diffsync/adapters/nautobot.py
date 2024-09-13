@@ -341,7 +341,7 @@ class NautobotAdapter(DiffSync):
         self.contenttype_map = {c.model: c.id for c in ContentType.objects.only("id", "model")}
 
         if self.job.parent_location:
-            self.region_map[self.job.parent_location] = Location.objects.get(name=self.job.parent_location).id
+            self.region_map[self.job.parent_location.name] = Location.objects.get(name=self.job.parent_location).id
         else:
             self.region_map = {
                 loc_data["parent"]: Location.objects.get(name=loc_data["parent"]).id
