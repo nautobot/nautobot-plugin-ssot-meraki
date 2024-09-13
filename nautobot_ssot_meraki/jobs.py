@@ -1,19 +1,18 @@
 """Jobs for Meraki SSoT integration."""
 
-from django.conf import settings
 from diffsync.enum import DiffSyncFlags
+from django.conf import settings
 from nautobot.core.celery import register_jobs
 from nautobot.dcim.models import Location, LocationType
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
-from nautobot.extras.jobs import BooleanVar, ObjectVar, JSONVar
+from nautobot.extras.jobs import BooleanVar, JSONVar, ObjectVar
 from nautobot.extras.models import ExternalIntegration
 from nautobot.tenancy.models import Tenant
-
 from nautobot_ssot.jobs.base import DataSource
-from nautobot_ssot_meraki.exceptions import JobException
-from nautobot_ssot_meraki.diffsync.adapters import meraki, nautobot
-from nautobot_ssot_meraki.utils.meraki import DashboardClient
 
+from nautobot_ssot_meraki.diffsync.adapters import meraki, nautobot
+from nautobot_ssot_meraki.exceptions import JobException
+from nautobot_ssot_meraki.utils.meraki import DashboardClient
 
 PLUGIN_CFG = settings.PLUGINS_CONFIG["nautobot_ssot_meraki"]
 
@@ -115,7 +114,14 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         self.target_adapter.load()
 
     def run(
-        self, dryrun, memory_profiling, instance, debug, tenant, *args, **kwargs
+        self,
+        dryrun,
+        memory_profiling,
+        instance,
+        debug,
+        tenant,
+        *args,
+        **kwargs,
     ):  # pylint: disable=arguments-differ, too-many-arguments
         """Perform data synchronization."""
         self.dryrun = dryrun
