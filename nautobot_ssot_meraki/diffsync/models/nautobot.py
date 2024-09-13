@@ -1,13 +1,15 @@
 """Nautobot DiffSync models for Meraki SSoT."""
 
 from datetime import datetime
+
 from nautobot.dcim.models import Device as NewDevice
 from nautobot.dcim.models import DeviceType, Interface, Location
 from nautobot.extras.models import Note, Role
 from nautobot.ipam.models import IPAddress as OrmIPAddress
-from nautobot.ipam.models import Prefix as OrmPrefix
 from nautobot.ipam.models import IPAddressToInterface
-from nautobot_ssot_meraki.diffsync.models.base import Device, Hardware, Network, Port, Prefix, IPAddress, IPAssignment
+from nautobot.ipam.models import Prefix as OrmPrefix
+
+from nautobot_ssot_meraki.diffsync.models.base import Device, Hardware, IPAddress, IPAssignment, Network, Port, Prefix
 from nautobot_ssot_meraki.utils.nautobot import add_software_lcm, assign_version_to_device
 
 try:
@@ -27,8 +29,8 @@ class NautobotNetwork(Network):
         """Create Site in Nautobot from NautobotNetwork object."""
         new_site = Location(
             name=ids["name"],
-            location_type_id=diffsync.locationtype_map["Site"],
-            parent_id=diffsync.region_map["Global Region"],
+            location_type_id=diffsync.locationtype_map[ids["location_type"]],
+            parent_id=diffsync.region_map[ids["parent"]],
             status_id=diffsync.status_map["Active"],
             time_zone=attrs["timezone"],
         )
