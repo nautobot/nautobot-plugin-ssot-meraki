@@ -93,7 +93,7 @@ class NautobotAdapter(DiffSync):
                     },
                 )
             except ObjectNotFound:
-                self.site_map[site.name] = site.id
+                self.site_map[site.name] = site
                 new_site = self.network(
                     name=site.name,
                     location_type=site.location_type.name,

@@ -29,7 +29,7 @@ class TestNautobotPrefix(TransactionTestCase):  # pylint: disable=too-many-insta
         )
         self.diffsync = DiffSync()
         self.diffsync.namespace_map = {"Test": self.test_ns.id, "Update": self.update_site.id}
-        self.diffsync.site_map = {"Test": self.test_site.id, "Update": self.update_site.id}
+        self.diffsync.site_map = {"Test": self.test_site, "Update": self.update_site}
         self.diffsync.tenant_map = {"Test": self.test_tenant.id, "Update": self.update_tenant.id}
         self.diffsync.status_map = {"Active": self.status_active.id}
         self.diffsync.prefix_map = {}
