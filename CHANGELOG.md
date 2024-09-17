@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!--next-version-placeholder-->
 
+## v2.1.0 (2024-09-17)
+
+### Feature
+
+* ✨ Add location_type, parent, and parent_loctype identifiers and attributes to Network DiffSync model. ([`8c16f3b`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/8c16f3b614a17cb89da0d077014c361617d843c4))
+* ✨ Update Job form to allow specifying Network LocationType, default parent Location, and a location mapping. ([`02a25a6`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/02a25a6789970777f84617adb9b8f4ef65fce240))
+
+### Fix
+
+* 🐛 Refactor the site_map to hold full Location object instead of just ID as object is required for Prefix. ([`3e26111`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/3e2611167f269ae67eab141dcea2a097c7704479))
+* 🐛 Correct region_map for parent_location to use name. ([`65a1a40`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/65a1a40d15e7f9089d40857ce9e568542107f178))
+* 🐛 Remove extraneous location attribute. ([`a962167`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/a9621670f594b82ca5c805ac6cdbc21e4737a531))
+* ♻️ Redo how region_map is created to allow for the specified parent or location_mapping from Job form. ([`7d511be`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/7d511be2b0c84901d1135b4402c926781263465a))
+* 🐛 Update time_zone to just use string form of object if present as zone is no longer an attribute. ([`083a2e2`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/083a2e28cfecdec6d81c142c08a02218c76d01de))
+* 🐛 Update how version is determined for Device to check DLC App if found installed. ([`36593b3`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/36593b37a48ba203c7da754b29e91adc96da3a81))
+* 🐛 Change location_id to location for Prefix create and update. ([`96dafa2`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/96dafa2fb26be05e59776dc21f98935c0317ec1d))
+* 🐛 Correct Platform name to Cisco Meraki and fix test. ([`ffb6fbb`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/ffb6fbb6a808ca543767f4e69093186417285776))
+* 🐛 Correct filter for pulling Meraki Platform to match change in signals. ([`d2e9d10`](https://github.com/networktocode-llc/nautobot-plugin-ssot-meraki/commit/d2e9d1085c041c5701fc0235cd30c39bd7ebfc21))
+
 ## v2.0.0 (2024-03-13)
 
 ### Feature
