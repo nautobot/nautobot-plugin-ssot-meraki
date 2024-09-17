@@ -1,13 +1,15 @@
 """Nautobot DiffSync models for Meraki SSoT."""
 
 from datetime import datetime
+
 from nautobot.dcim.models import Device as NewDevice
 from nautobot.dcim.models import DeviceType, Interface, Location
 from nautobot.extras.models import Note, Role
 from nautobot.ipam.models import IPAddress as OrmIPAddress
-from nautobot.ipam.models import Prefix as OrmPrefix
 from nautobot.ipam.models import IPAddressToInterface
-from nautobot_ssot_meraki.diffsync.models.base import Device, Hardware, Network, Port, Prefix, IPAddress, IPAssignment
+from nautobot.ipam.models import Prefix as OrmPrefix
+
+from nautobot_ssot_meraki.diffsync.models.base import Device, Hardware, IPAddress, IPAssignment, Network, Port, Prefix
 from nautobot_ssot_meraki.utils.nautobot import add_software_lcm, assign_version_to_device
 
 try:
@@ -27,8 +29,8 @@ class NautobotNetwork(Network):
         """Create Site in Nautobot from NautobotNetwork object."""
         new_site = Location(
             name=ids["name"],
-            location_type_id=diffsync.locationtype_map["Site"],
-            parent_id=diffsync.region_map["Global Region"],
+            location_type_id=diffsync.locationtype_map[ids["location_type"]],
+            parent_id=diffsync.region_map[ids["parent"]],
             status_id=diffsync.status_map["Active"],
             time_zone=attrs["timezone"],
         )
@@ -47,7 +49,7 @@ class NautobotNetwork(Network):
         if attrs.get("tenant"):
             new_site.tenant_id = diffsync.tenant_map[attrs["tenant"]]
         new_site.validated_save()
-        diffsync.site_map[ids["name"]] = new_site.id
+        diffsync.site_map[ids["name"]] = new_site
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
     def update(self, attrs):
@@ -107,7 +109,7 @@ class NautobotDevice(Device):
             diffsync.devicerole_map[attrs["role"]] = dev_role.id
         new_device = NewDevice(
             name=ids["name"],
-            platform_id=diffsync.platform_map["Meraki"],
+            platform_id=diffsync.platform_map["Cisco Meraki"],
             serial=attrs["serial"],
             status_id=diffsync.status_map[attrs["status"]],
             role_id=diffsync.devicerole_map[attrs["role"]],
@@ -155,7 +157,7 @@ class NautobotDevice(Device):
         if "model" in attrs:
             device.device_type_id = self.diffsync.devicetype_map[attrs["model"]]
         if "network" in attrs:
-            device.location_id = self.diffsync.site_map[attrs["network"]]
+            device.location = self.diffsync.site_map[attrs["network"]]
         if attrs.get("notes"):
             new_note = Note(
                 note=attrs["notes"],
@@ -246,7 +248,7 @@ class NautobotPrefix(Prefix):
         """Create Prefix in Nautobot from NautobotPrefix object."""
         new_pf = OrmPrefix(
             prefix=ids["prefix"],
-            location_id=diffsync.site_map[attrs["location"]],
+            location=diffsync.site_map[attrs["location"]],
             namespace_id=diffsync.namespace_map[ids["namespace"]],
             status_id=diffsync.status_map["Active"],
             tenant_id=diffsync.tenant_map[attrs["tenant"]] if attrs.get("tenant") else None,
@@ -262,7 +264,7 @@ class NautobotPrefix(Prefix):
         prefix = OrmPrefix.objects.get(id=self.uuid)
         if "location" in attrs:
             if attrs.get("location"):
-                prefix.location_id = self.diffsync.site_map[attrs["location"]]
+                prefix.location = self.diffsync.site_map[attrs["location"]]
             else:
                 prefix.location = None
         if "tenant" in attrs:
