@@ -49,7 +49,7 @@ class NautobotNetwork(Network):
         if attrs.get("tenant"):
             new_site.tenant_id = diffsync.tenant_map[attrs["tenant"]]
         new_site.validated_save()
-        diffsync.site_map[ids["name"]] = new_site.id
+        diffsync.site_map[ids["name"]] = new_site
         return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
 
     def update(self, attrs):
@@ -157,7 +157,7 @@ class NautobotDevice(Device):
         if "model" in attrs:
             device.device_type_id = self.diffsync.devicetype_map[attrs["model"]]
         if "network" in attrs:
-            device.location_id = self.diffsync.site_map[attrs["network"]]
+            device.location = self.diffsync.site_map[attrs["network"]]
         if attrs.get("notes"):
             new_note = Note(
                 note=attrs["notes"],
