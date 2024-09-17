@@ -1,19 +1,20 @@
 """Nautobot SSoT for Meraki Adapter for Meraki SSoT plugin."""
 
-from django.conf import settings
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
+from django.conf import settings
 from netutils.ip import ipaddress_interface, netmask_to_cidr
+
 from nautobot_ssot_meraki.diffsync.models.meraki import (
-    MerakiNetwork,
     MerakiDevice,
     MerakiHardware,
-    MerakiPort,
-    MerakiPrefix,
     MerakiIPAddress,
     MerakiIPAssignment,
+    MerakiNetwork,
+    MerakiPort,
+    MerakiPrefix,
 )
-from nautobot_ssot_meraki.utils.meraki import parse_hostname_for_role, get_role_from_devicetype
+from nautobot_ssot_meraki.utils.meraki import get_role_from_devicetype, parse_hostname_for_role
 
 PLUGIN_CFG = settings.PLUGINS_CONFIG["nautobot_ssot_meraki"]
 
@@ -51,12 +52,32 @@ class MerakiAdapter(DiffSync):
     def load_networks(self):
         """Load networks from Meraki dashboard into DiffSync models."""
         for net in self.conn.get_org_networks():
+            parent_name = None
+            if self.job.network_loctype.parent:
+                if self.job.parent_location:
+                    parent_name = self.job.parent_location.name
+                elif self.job.location_map and net in self.job.location_map:
+                    parent_name = self.job.location_map[net]["parent"]
+                else:
+                    self.job.logger.error(
+                        f"Parent Location is required for {self.job.network_loctype.name} but can't determine parent to be assigned to {net}."
+                    )
+                    continue
             try:
-                self.get(self.network, net["name"])
+                self.get(
+                    self.network,
+                    {
+                        "name": net["name"],
+                        "location_type": self.job.network_loctype.name,
+                        "parent": parent_name,
+                    },
+                )
                 self.job.logger.warning(f"Duplicate network {net['name']} found and being skipped.")
             except ObjectNotFound:
                 new_network = self.network(
                     name=net["name"],
+                    location_type=self.job.network_loctype.name,
+                    parent=parent_name,
                     timezone=net["timeZone"],
                     notes=net["notes"].rstrip() if net.get("notes") else "",
                     tags=net["tags"],

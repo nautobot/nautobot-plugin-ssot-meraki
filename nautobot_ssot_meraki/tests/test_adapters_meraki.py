@@ -1,8 +1,12 @@
 """Test Meraki adapter."""
+
 from unittest.mock import MagicMock
 
-from nautobot.extras.models import JobResult
+from django.contrib.contenttypes.models import ContentType
 from nautobot.core.testing import TransactionTestCase
+from nautobot.dcim.models import Device, LocationType
+from nautobot.extras.models import JobResult
+
 from nautobot_ssot_meraki.diffsync.adapters.meraki import MerakiAdapter
 from nautobot_ssot_meraki.jobs import MerakiDataSource
 from nautobot_ssot_meraki.tests.fixtures import fixtures as fix
@@ -27,8 +31,11 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.meraki_client.get_appliance_switchports.return_value = fix.GET_APPLIANCE_SWITCHPORTS_FIXTURE
         self.meraki_client.get_org_switchports.return_value = fix.GET_ORG_SWITCHPORTS_RECV_FIXTURE
 
+        site_loctype = LocationType.objects.get_or_create(name="Site")[0]
+        site_loctype.content_types.add(ContentType.objects.get_for_model(Device))
         self.job = MerakiDataSource()
         self.job.logger.warning = MagicMock()
+        self.job.network_loctype = site_loctype
         self.job.job_result = JobResult.objects.create(
             name=self.job.class_path, task_name="fake task", worker="default"
         )
@@ -39,7 +46,7 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.meraki_client.validate_organization_exists.return_value = True
         self.meraki.load()
         self.assertEqual(
-            {net["name"] for net in fix.GET_ORG_NETWORKS_SENT_FIXTURE},
+            {f"{net['name']}__None__Site" for net in fix.GET_ORG_NETWORKS_SENT_FIXTURE},
             {net.get_unique_id() for net in self.meraki.get_all("network")},
         )
         self.assertEqual(

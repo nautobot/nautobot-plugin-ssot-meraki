@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from typing import Optional
+
 from diffsync import DiffSync
 from diffsync.enum import DiffSyncModelFlags
 from diffsync.exceptions import ObjectNotFound
@@ -11,17 +12,17 @@ from nautobot.dcim.models import Device, DeviceType, Interface, Location, Locati
 from nautobot.extras.models import Note, Relationship, RelationshipAssociation, Role, Status
 from nautobot.ipam.models import IPAddress, IPAddressToInterface, Namespace, Prefix
 from nautobot.tenancy.models import Tenant
+
 from nautobot_ssot_meraki.diffsync.models.nautobot import (
     NautobotDevice,
     NautobotHardware,
+    NautobotIPAddress,
+    NautobotIPAssignment,
     NautobotNetwork,
     NautobotPort,
     NautobotPrefix,
-    NautobotIPAddress,
-    NautobotIPAssignment,
 )
-from nautobot_ssot_meraki.utils.nautobot import get_tag_strings, get_cf_version_map, get_dlc_version_map
-
+from nautobot_ssot_meraki.utils.nautobot import get_cf_version_map, get_dlc_version_map, get_tag_strings
 
 try:
     import nautobot_device_lifecycle_mgmt  # noqa: F401
@@ -83,14 +84,23 @@ class NautobotAdapter(DiffSync):
         site_type = LocationType.objects.get(name="Site")
         for site in Location.objects.filter(location_type=site_type):
             try:
-                self.get(self.network, site.name)
+                self.get(
+                    self.network,
+                    {
+                        "name": site.name,
+                        "location_type": site.location_type.name,
+                        "parent": site.parent.name if site.parent else None,
+                    },
+                )
             except ObjectNotFound:
-                self.site_map[site.name] = site.id
+                self.site_map[site.name] = site
                 new_site = self.network(
                     name=site.name,
+                    location_type=site.location_type.name,
+                    parent=site.parent.name if site.parent else None,
                     notes="",
                     tags=get_tag_strings(list_tags=site.tags),
-                    timezone=site.time_zone.zone if site.time_zone else None,
+                    timezone=str(site.time_zone) if site.time_zone else None,
                     tenant=site.tenant.name if site.tenant else None,
                     uuid=site.id,
                 )
@@ -123,6 +133,17 @@ class NautobotAdapter(DiffSync):
             except ObjectNotFound:
                 self.device_map[dev.name] = dev.id
                 self.port_map[dev.name] = {}
+                version = dev._custom_field_data["os_version"]
+                if LIFECYCLE_MGMT:
+                    try:
+                        software_relation = Relationship.objects.get(label="Software on Device")
+                        relationship = RelationshipAssociation.objects.get(
+                            relationship=software_relation, destination_id=dev.id
+                        )
+                        version = relationship.source.version
+                    except RelationshipAssociation.DoesNotExist:
+                        self.job.logger.info(f"Unable to find DLC Software version for {dev.name}.")
+                        version = ""
                 new_dev = self.device(
                     name=dev.name,
                     serial=dev.serial,
@@ -133,7 +154,7 @@ class NautobotAdapter(DiffSync):
                     network=dev.location.name,
                     tenant=dev.tenant.name if dev.tenant else None,
                     uuid=dev.id,
-                    version=dev._custom_field_data["os_version"] if dev._custom_field_data.get("os_version") else "",
+                    version=version,
                 )
                 if dev.notes:
                     note = dev.notes.last()
@@ -312,13 +333,20 @@ class NautobotAdapter(DiffSync):
         """Load data from Nautobot into DiffSync models."""
         self.status_map = {s.name: s.id for s in Status.objects.only("id", "name")}
         self.locationtype_map = {lt.name: lt.id for lt in LocationType.objects.only("id", "name")}
-        self.region_map["Global Region"] = Location.objects.get(name="Global Region").id
         self.platform_map = {p.name: p.id for p in Platform.objects.only("id", "name")}
         self.manufacturer_map = {m.name: m.id for m in Manufacturer.objects.only("id", "name")}
         self.devicerole_map = {d.name: d.id for d in Role.objects.only("id", "name")}
         self.namespace_map = {ns.name: ns.id for ns in Namespace.objects.only("id", "name")}
         self.relationship_map = {r.label: r.id for r in Relationship.objects.only("id", "label")}
         self.contenttype_map = {c.model: c.id for c in ContentType.objects.only("id", "model")}
+
+        if self.job.parent_location:
+            self.region_map[self.job.parent_location.name] = Location.objects.get(name=self.job.parent_location).id
+        else:
+            self.region_map = {
+                loc_data["parent"]: Location.objects.get(name=loc_data["parent"]).id
+                for _, loc_data in self.job.location_map.items()
+            }
         if LIFECYCLE_MGMT:
             self.version_map = get_dlc_version_map()
         else:

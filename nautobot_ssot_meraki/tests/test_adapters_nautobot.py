@@ -29,12 +29,6 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         super().setUp()
         self.status_active = Status.objects.get(name="Active")
 
-        job = MerakiDataSource()
-        job.job_result = JobResult.objects.create(name=job.class_path, task_name="fake task", worker="default")
-        self.nb_adapter = NautobotAdapter(job=job, sync=None)
-        self.nb_adapter.job = MagicMock()
-        self.nb_adapter.job.logger.warning = MagicMock()
-
         self.region_type = LocationType.objects.get_or_create(name="Region", defaults={"nestable": True})[0]
         global_region = Location.objects.create(
             name="Global Region",
@@ -63,7 +57,7 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         cisco_manu = Manufacturer.objects.get(name="Cisco Meraki")
         cisco_manu.validated_save()
 
-        meraki_plat = Platform.objects.get(name="Meraki")
+        meraki_plat = Platform.objects.get(name="Cisco Meraki")
 
         mx84 = DeviceType.objects.create(model="MX84", manufacturer=cisco_manu)
         mx84.validated_save()
@@ -82,6 +76,7 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         )
         lab01.validated_save()
         lab01.custom_field_data["system_of_record"] = "Meraki SSoT"
+        lab01.custom_field_data["os_version"] = "10.1.1"
         lab01.validated_save()
         lab01_note = Note.objects.create(
             note="Lab01 Test Note",
@@ -115,11 +110,17 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         lab01_mgmt_ip.validated_save()
         IPAddressToInterface.objects.create(ip_address=lab01_mgmt_ip, interface=lab01_mgmt)
 
+        job = MerakiDataSource()
+        job.logger.warning = MagicMock()
+        job.parent_location = global_region
+        job.job_result = JobResult.objects.create(name=job.class_path, task_name="fake task", worker="default")
+        self.nb_adapter = NautobotAdapter(job=job, sync=None)
+
     def test_data_loading(self):
         """Test the load() function."""
         self.nb_adapter.load()
         self.assertEqual(
-            {site.name for site in Location.objects.filter(location_type=self.site_type)},
+            {f"{site.name}__None__Site" for site in Location.objects.filter(location_type=self.site_type)},
             {site.get_unique_id() for site in self.nb_adapter.get_all("network")},
         )
         self.assertEqual(
