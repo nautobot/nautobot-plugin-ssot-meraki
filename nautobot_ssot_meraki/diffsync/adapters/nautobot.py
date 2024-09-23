@@ -9,7 +9,7 @@ from diffsync.exceptions import ObjectNotFound
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import ProtectedError
 from nautobot.dcim.models import Device, DeviceType, Interface, Location, LocationType, Manufacturer, Platform
-from nautobot.extras.models import Note, Relationship, RelationshipAssociation, Role, Status
+from nautobot.extras.models import Note, Relationship, Role, Status
 from nautobot.ipam.models import IPAddress, IPAddressToInterface, Namespace, Prefix
 from nautobot.tenancy.models import Tenant
 
@@ -22,15 +22,7 @@ from nautobot_ssot_meraki.diffsync.models.nautobot import (
     NautobotPort,
     NautobotPrefix,
 )
-from nautobot_ssot_meraki.utils.nautobot import get_cf_version_map, get_dlc_version_map, get_tag_strings
-
-try:
-    import nautobot_device_lifecycle_mgmt  # noqa: F401
-
-    LIFECYCLE_MGMT = True
-except ImportError:
-    print("Device Lifecycle plugin isn't installed so will revert to CustomField for OS version.")
-    LIFECYCLE_MGMT = False
+from nautobot_ssot_meraki.utils.nautobot import get_tag_strings
 
 
 class NautobotAdapter(DiffSync):
@@ -133,17 +125,6 @@ class NautobotAdapter(DiffSync):
             except ObjectNotFound:
                 self.device_map[dev.name] = dev.id
                 self.port_map[dev.name] = {}
-                version = dev._custom_field_data["os_version"]
-                if LIFECYCLE_MGMT:
-                    try:
-                        software_relation = Relationship.objects.get(label="Software on Device")
-                        relationship = RelationshipAssociation.objects.get(
-                            relationship=software_relation, destination_id=dev.id
-                        )
-                        version = relationship.source.version
-                    except RelationshipAssociation.DoesNotExist:
-                        self.job.logger.info(f"Unable to find DLC Software version for {dev.name}.")
-                        version = ""
                 new_dev = self.device(
                     name=dev.name,
                     serial=dev.serial,
@@ -154,7 +135,7 @@ class NautobotAdapter(DiffSync):
                     network=dev.location.name,
                     tenant=dev.tenant.name if dev.tenant else None,
                     uuid=dev.id,
-                    version=version,
+                    version=dev.software_version.version,
                 )
                 if dev.notes:
                     note = dev.notes.last()
@@ -318,12 +299,6 @@ class NautobotAdapter(DiffSync):
                 dev.primary_ip6_id = d[1]
                 device_primary_ip_objs.append(dev)
             Device.objects.bulk_update(device_primary_ip_objs, ["primary_ip6_id"], batch_size=250)
-        if LIFECYCLE_MGMT:
-            if len(self.objects_to_create["relationship_assocs"]) > 0:
-                self.job.logger.info("Creating Relationships between Devices and Software Version")
-                RelationshipAssociation.objects.bulk_create(
-                    self.objects_to_create["relationship_assocs"], batch_size=250
-                )
         if len(self.objects_to_create["notes"]) > 0:
             self.job.logger.info("Performing bulk create of Notes in Nautobot")
             Note.objects.bulk_create(self.objects_to_create["notes"], batch_size=250)
@@ -347,10 +322,6 @@ class NautobotAdapter(DiffSync):
                 loc_data["parent"]: Location.objects.get(name=loc_data["parent"]).id
                 for _, loc_data in self.job.location_map.items()
             }
-        if LIFECYCLE_MGMT:
-            self.version_map = get_dlc_version_map()
-        else:
-            self.version_map = get_cf_version_map()
         self.tenant_map = {t.name: t.id for t in Tenant.objects.only("id", "name")}
 
         self.load_sites()
