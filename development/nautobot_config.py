@@ -1,11 +1,11 @@
 """Nautobot development configuration file."""
+
 # pylint: disable=invalid-envvar-default
 import os
 import sys
 
 from nautobot.core.settings import *  # noqa: F403  # pylint: disable=wildcard-import,unused-wildcard-import
-from nautobot.core.settings_funcs import parse_redis_connection, is_truthy
-
+from nautobot.core.settings_funcs import is_truthy, parse_redis_connection
 
 #
 # Misc. settings
@@ -141,9 +141,12 @@ PLUGINS_CONFIG = {
         "hide_example_jobs": True,
     },
     "nautobot_ssot_meraki": {
-        "meraki_org_id": os.getenv("MERAKI_ORG_ID", ""),
-        "meraki_token": os.getenv("MERAKI_TOKEN", ""),
-        "update_locations": is_truthy(os.getenv("NAUTOBOT_DNAC_SSOT_UPDATE_LOCATIONS", False)),
-        "hostname_mapping": [],
+        "hostname_mapping": [(".*FW.*", "Firewall")],
+        "devicetype_mapping": [
+            ("MR", "Wireless Access Point"),
+            ("MX", "Firewall"),
+            ("MS", "User Switch"),
+            ("MV", "Video"),
+        ],
     },
 }

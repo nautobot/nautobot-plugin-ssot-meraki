@@ -48,8 +48,6 @@ PLUGINS_CONFIG = {
         "hide_example_jobs": True,
     },
     "nautobot_ssot_meraki": {
-        "meraki_org_id": os.getenv("MERAKI_ORG_ID", ""),
-        "meraki_token": os.getenv("MERAKI_TOKEN", ""),
         "update_locations": is_truthy(os.getenv("NAUTOBOT_DNAC_SSOT_UPDATE_LOCATIONS", False)),
         "hostname_mapping": [],
         "devicetype_mapping": [],
@@ -82,8 +80,6 @@ The plugin behavior can be controlled with the following list of settings:
 
 | Key                  | Example                  | Default  | Description                                                                                  |
 | -------------------- | ------------------------ | -------- | -------------------------------------------------------------------------------------------- |
-| `meraki_org_id`      |      `12345`             |    ``    | A string representing the organization ID to use when querying the Meraki dashboard.         |
-| `meraki_token`       |      `123456abcde`       |    ``    | A string representing the authentication token to use querying the Meraki dashboard.         |
 | `update_locations`   |      True                |   False  | Boolean value to determine whether locations should be updated if found during a sync.       |
 | `hostname_mapping`   | [(".*FW.*", "Firewall")] |   []     | List of tuples containing a regex pattern to comparse hostname against and Role name.        |
 | `devicetype_mapping` |   [("MX", "Firewall")]   |   []     | List of tuples containing a model series, ie MR, and the defined Role name.                  |
