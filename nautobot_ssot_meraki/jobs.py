@@ -53,6 +53,18 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         default={},
         description="Map of information regarding Networks in Meraki and their parent Location(s).",
     )
+    hostname_mapping = JSONVar(
+        label="Hostname Mapping",
+        required=False,
+        default={},
+        description="Map of Device hostnames to Role.",
+    )
+    devicetype_mapping = JSONVar(
+        label="DeviceType Mapping",
+        required=False,
+        default={},
+        description="Map of DeviceTypes to Role.",
+    )
     debug = BooleanVar(description="Enable for more verbose debug logging", default=False)
     tenant = ObjectVar(model=Tenant, label="Tenant", required=False)
 
@@ -117,21 +129,21 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         self,
         dryrun,
         memory_profiling,
-        instance,
         debug,
-        tenant,
         *args,
         **kwargs,
-    ):  # pylint: disable=arguments-differ, too-many-arguments
+    ):  # pylint: disable=arguments-differ
         """Perform data synchronization."""
         self.dryrun = dryrun
         self.memory_profiling = memory_profiling
-        self.instance = instance
+        self.instance = kwargs["instance"]
         self.network_loctype = kwargs["network_loctype"]
         self.parent_location = kwargs["parent_location"]
         self.location_map = kwargs["location_map"]
         self.debug = debug
-        self.tenant = tenant
+        self.tenant = kwargs["tenant"]
+        self.hostname_mapping = kwargs["hostname_mapping"]
+        self.devicetype_mapping = kwargs["devicetype_mapping"]
         super().run(dryrun - self.dryrun, memory_profiling=self.memory_profiling, *args, **kwargs)
 
 

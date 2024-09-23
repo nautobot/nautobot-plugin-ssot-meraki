@@ -2,7 +2,6 @@
 
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
-from django.conf import settings
 from netutils.ip import ipaddress_interface, netmask_to_cidr
 
 from nautobot_ssot_meraki.diffsync.models.meraki import (
@@ -15,8 +14,6 @@ from nautobot_ssot_meraki.diffsync.models.meraki import (
     MerakiPrefix,
 )
 from nautobot_ssot_meraki.utils.meraki import get_role_from_devicetype, parse_hostname_for_role
-
-PLUGIN_CFG = settings.PLUGINS_CONFIG["nautobot_ssot_meraki"]
 
 
 class MerakiAdapter(DiffSync):
@@ -100,11 +97,11 @@ class MerakiAdapter(DiffSync):
                     self.get(self.device, dev["name"])
                     self.job.logger.warning(f"Duplicate device {dev['name']} found and being skipped.")
                 except ObjectNotFound:
-                    if PLUGIN_CFG.get("hostname_mapping") and len(PLUGIN_CFG["hostname_mapping"]) > 0:
+                    if self.job.hostname_mapping and len(self.job.hostname_mapping) > 0:
                         if self.job.debug:
                             self.job.logger.debug(f"Parsing hostname for device {dev['name']} to determine role.")
                         role = parse_hostname_for_role(dev_hostname=dev["name"])
-                    elif PLUGIN_CFG.get("devicetype_mapping") and len(PLUGIN_CFG["devicetype_mapping"]) > 0:
+                    elif self.job.devicetype_mapping and len(self.job.devicetype_mapping) > 0:
                         if self.job.debug:
                             self.job.logger.debug(f"Parsing device model for device {dev['name']} to determine role.")
                         role = get_role_from_devicetype(dev_model=dev["model"])
