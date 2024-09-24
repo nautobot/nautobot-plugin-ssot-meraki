@@ -36,7 +36,9 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
             status=self.status_active,
         )
         global_region.validated_save()
-        self.site_type = LocationType.objects.get(name="Site")
+        self.site_type = LocationType.objects.get_or_create(name="Site")[0]
+        self.site_type.content_types.add(ContentType.objects.get_for_model(Device))
+        self.site_type.content_types.add(ContentType.objects.get_for_model(Prefix))
         site1 = Location.objects.create(
             name="Lab",
             location_type=self.site_type,
@@ -113,6 +115,10 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         job = MerakiDataSource()
         job.logger.warning = MagicMock()
         job.parent_location = global_region
+        job.hostname_mapping = []
+        job.devicetype_mapping = [("MS", "Switch"), ("MX", "Firewall")]
+        job.network_loctype = self.site_type
+        job.tenant = None
         job.job_result = JobResult.objects.create(name=job.class_path, task_name="fake task", worker="default")
         self.nb_adapter = NautobotAdapter(job=job, sync=None)
 
@@ -120,7 +126,7 @@ class NautobotDiffSyncTestCase(TransactionTestCase):
         """Test the load() function."""
         self.nb_adapter.load()
         self.assertEqual(
-            {f"{site.name}__None__Site" for site in Location.objects.filter(location_type=self.site_type)},
+            {f"{site.name}__None" for site in Location.objects.filter(location_type=self.site_type)},
             {site.get_unique_id() for site in self.nb_adapter.get_all("network")},
         )
         self.assertEqual(

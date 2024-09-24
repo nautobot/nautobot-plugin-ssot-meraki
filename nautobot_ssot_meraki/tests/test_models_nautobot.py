@@ -1,13 +1,15 @@
 """Unit tests for Nautobot IPAM model CRUD functions."""
 
 from unittest.mock import patch
-from django.contrib.contenttypes.models import ContentType
+
 from diffsync import DiffSync
+from django.contrib.contenttypes.models import ContentType
 from nautobot.core.testing import TransactionTestCase
 from nautobot.dcim.models import Location, LocationType
 from nautobot.extras.models import Status
 from nautobot.ipam.models import Namespace, Prefix
 from nautobot.tenancy.models import Tenant
+
 from nautobot_ssot_meraki.diffsync.models.nautobot import NautobotPrefix
 
 
@@ -17,7 +19,7 @@ class TestNautobotPrefix(TransactionTestCase):  # pylint: disable=too-many-insta
     def setUp(self):
         super().setUp()
         self.status_active = Status.objects.get(name="Active")
-        site_lt = LocationType.objects.get(name="Site")
+        site_lt = LocationType.objects.get_or_create(name="Site")[0]
         site_lt.content_types.add(ContentType.objects.get_for_model(Prefix))
         self.test_site = Location.objects.create(name="Test", location_type=site_lt, status=self.status_active)
         self.update_site = Location.objects.create(name="Update", location_type=site_lt, status=self.status_active)

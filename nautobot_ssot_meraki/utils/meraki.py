@@ -1,4 +1,5 @@
 """Utility functions for working with Meraki."""
+
 import re
 
 import meraki

@@ -1,4 +1,5 @@
 """Collection of fixtures to be used for unit testing."""
+
 import json
 
 

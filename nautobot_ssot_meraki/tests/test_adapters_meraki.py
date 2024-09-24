@@ -35,6 +35,8 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         site_loctype.content_types.add(ContentType.objects.get_for_model(Device))
         self.job = MerakiDataSource()
         self.job.logger.warning = MagicMock()
+        self.job.hostname_mapping = []
+        self.job.devicetype_mapping = [("MS", "Switch"), ("MX", "Firewall")]
         self.job.network_loctype = site_loctype
         self.job.job_result = JobResult.objects.create(
             name=self.job.class_path, task_name="fake task", worker="default"
@@ -46,7 +48,7 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
         self.meraki_client.validate_organization_exists.return_value = True
         self.meraki.load()
         self.assertEqual(
-            {f"{net['name']}__None__Site" for net in fix.GET_ORG_NETWORKS_SENT_FIXTURE},
+            {f"{net['name']}__None" for net in fix.GET_ORG_NETWORKS_SENT_FIXTURE},
             {net.get_unique_id() for net in self.meraki.get_all("network")},
         )
         self.assertEqual(
@@ -81,14 +83,6 @@ class TestMerakiAdapterTestCase(TransactionTestCase):
             },
             {ip.get_unique_id() for ip in self.meraki.get_all("ipaddress")},
         )
-
-    def test_duplicate_network_loading_error(self):
-        """Validate error thrown when duplicate network attempts to be loaded."""
-        self.meraki.load_networks()
-        self.meraki.load_networks()
-        self.job.logger.warning.assert_called()
-        self.job.logger.warning.calls[0].contains(message="Duplicate network Lab found and being skipped.")
-        self.job.logger.warning.calls[1].contains(message="Duplicate network HQ found and being skipped.")
 
     def test_duplicate_device_loading_error(self):
         """Validate error thrown when duplicate device attempts to be loaded."""

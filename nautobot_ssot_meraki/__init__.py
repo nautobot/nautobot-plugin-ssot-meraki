@@ -1,7 +1,10 @@
 """Plugin declaration for nautobot_ssot_meraki."""
+
 from importlib import metadata
+
 from nautobot.core.signals import nautobot_database_ready
 from nautobot.extras.plugins import NautobotAppConfig
+
 from nautobot_ssot_meraki.signals import nautobot_database_ready_callback
 
 __version__ = metadata.version(__name__)
