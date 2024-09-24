@@ -119,7 +119,7 @@ class NautobotDevice(Device):
             new_device.tags.set(attrs["tags"])
             for tag in new_device.tags.all():
                 tag.content_types.add(diffsync.contenttype_map["device"])
-        if attrs.get("tenant"):
+        if "tenant" in attrs:
             if attrs.get("tenant"):
                 new_device.tenant_id = diffsync.tenant_map[attrs["tenant"]]
             else:
