@@ -20,7 +20,7 @@ class NautobotSsotMerakiConfig(NautobotAppConfig):
     description = "Nautobot SSoT for Meraki."
     base_url = "nautobot-ssot-meraki"
     required_settings = []
-    min_version = "2.1.0"
+    min_version = "2.2.0"
     max_version = "2.9999"
     default_settings = {}
     caching_config = {}
