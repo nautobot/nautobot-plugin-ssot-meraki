@@ -144,7 +144,7 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         self.tenant = kwargs["tenant"]
         self.hostname_mapping = list(kwargs["hostname_mapping"])
         self.devicetype_mapping = list(kwargs["devicetype_mapping"])
-        super().run(dryrun - self.dryrun, memory_profiling=self.memory_profiling, *args, **kwargs)
+        super().run(dryrun=self.dryrun, memory_profiling=self.memory_profiling, *args, **kwargs)
 
 
 jobs = [MerakiDataSource]
