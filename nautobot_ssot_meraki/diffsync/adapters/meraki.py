@@ -63,28 +63,17 @@ class MerakiAdapter(DiffSync):
                         f"Parent Location is required for {self.job.network_loctype.name} but can't determine parent to be assigned to {net}."
                     )
                     continue
-            try:
-                self.get(
-                    self.network,
-                    {
-                        "name": net["name"],
-                        "location_type": self.job.network_loctype.name,
-                        "parent": parent_name,
-                    },
-                )
-                self.job.logger.warning(f"Duplicate network {net['name']} found and being skipped.")
-            except ObjectNotFound:
-                new_network = self.network(
-                    name=net["name"],
-                    location_type=self.job.network_loctype.name,
-                    parent=parent_name,
-                    timezone=net["timeZone"],
-                    notes=net["notes"].rstrip() if net.get("notes") else "",
-                    tags=net["tags"],
-                    tenant=self.tenant.name if self.tenant else None,
-                    uuid=None,
-                )
-                self.add(new_network)
+            self.get_or_instantiate(
+                self.network,
+                ids={"name": net["name"], "parent": parent_name},
+                attrs={
+                    "timezone": net["timeZone"],
+                    "notes": net["notes"].rstrip() if net.get("notes") else "",
+                    "tags": net["tags"],
+                    "tenant": self.tenant.name if self.tenant else None,
+                    "uuid": None,
+                },
+            )
 
     def load_devices(self):
         """Load devices from Meraki dashboard into DiffSync models."""
@@ -112,14 +101,28 @@ class MerakiAdapter(DiffSync):
                         role = "Unknown"
                     self.load_hardware_model(device_info=dev)
                     self.get_or_instantiate(self.osversion, ids={"version": dev["firmware"]})
+                    new_dev, loaded = self.get_or_instantiate(
+                        self.device,
+                        ids={"name": dev["name"]},
+                        attrs={
+                            "notes": dev["notes"].rstrip(),
+                            "serial": dev["serial"],
+                            "status": status,
+                            "role": role,
+                            "model": dev["model"],
+                            "network": self.conn.network_map[dev["networkId"]]["name"],
+                            "tenant": self.tenant.name if self.tenant else None,
+                            "uuid": None,
+                            "version": dev["firmware"],
+                        },
                     )
-                    self.add(new_dev)
-                    if dev["model"].startswith(("MX", "MG", "Z")):
-                        self.load_firewall_ports(device=new_dev, serial=dev["serial"], network_id=dev["networkId"])
-                    if dev["model"].startswith("MS"):
-                        self.load_switch_ports(device=new_dev, serial=dev["serial"])
-                    if dev["model"].startswith("MR"):
-                        self.load_ap_ports(device=new_dev, serial=dev["serial"])
+                    if loaded:
+                        if dev["model"].startswith(("MX", "MG", "Z")):
+                            self.load_firewall_ports(device=new_dev, serial=dev["serial"], network_id=dev["networkId"])
+                        if dev["model"].startswith("MS"):
+                            self.load_switch_ports(device=new_dev, serial=dev["serial"])
+                        if dev["model"].startswith("MR"):
+                            self.load_ap_ports(device=new_dev, serial=dev["serial"])
             else:
                 self.job.logger.warning(f"Device serial {dev['serial']} is missing hostname so will be skipped.")
 

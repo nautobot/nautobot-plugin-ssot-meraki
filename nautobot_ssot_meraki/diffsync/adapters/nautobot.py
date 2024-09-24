@@ -83,33 +83,22 @@ class NautobotAdapter(DiffSync):
 
     def load_sites(self):
         """Load Site data from Nautobot into DiffSync model."""
-        site_type = LocationType.objects.get(name="Site")
-        for site in Location.objects.filter(location_type=site_type):
-            try:
-                self.get(
-                    self.network,
-                    {
-                        "name": site.name,
-                        "location_type": site.location_type.name,
-                        "parent": site.parent.name if site.parent else None,
-                    },
-                )
-            except ObjectNotFound:
-                self.site_map[site.name] = site
-                new_site = self.network(
-                    name=site.name,
-                    location_type=site.location_type.name,
-                    parent=site.parent.name if site.parent else None,
-                    notes="",
-                    tags=get_tag_strings(list_tags=site.tags),
-                    timezone=str(site.time_zone) if site.time_zone else None,
-                    tenant=site.tenant.name if site.tenant else None,
-                    uuid=site.id,
-                )
-                if site.notes:
-                    note = site.notes.last()
-                    new_site.notes = note.note.rstrip()
-                self.add(new_site)
+        for site in Location.objects.filter(location_type=self.job.network_loctype):
+            self.site_map[site.name] = site
+            new_site, _ = self.get_or_instantiate(
+                self.network,
+                ids={"name": site.name, "parent": site.parent.name if site.parent else None},
+                attrs={
+                    "notes": "",
+                    "tags": get_tag_strings(list_tags=site.tags),
+                    "timezone": str(site.time_zone) if site.time_zone else None,
+                    "tenant": site.tenant.name if site.tenant else None,
+                    "uuid": site.id,
+                },
+            )
+            if site.notes:
+                note = site.notes.last()
+                new_site.notes = note.note.rstrip()
 
     def load_devicetypes(self):
         """Load DeviceType data from Nautobot into DiffSync model."""
