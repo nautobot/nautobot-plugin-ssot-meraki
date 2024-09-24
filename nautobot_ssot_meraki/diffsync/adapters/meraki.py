@@ -29,7 +29,7 @@ class MerakiAdapter(DiffSync):
 
     top_level = ["network", "hardware", "device", "prefix", "ipaddress", "ipassignment"]
 
-    def __init__(self, job, sync, client, tenant=None, *args, **kwargs):
+    def __init__(self, job, sync, client, tenant=None):
         """Initialize Meraki.
 
         Args:
@@ -38,7 +38,7 @@ class MerakiAdapter(DiffSync):
             client (object): Meraki API client connection object.
             tenant (object): Tenant specified in Job form to attach to imported Devices.
         """
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.job = job
         self.sync = sync
         self.conn = client
