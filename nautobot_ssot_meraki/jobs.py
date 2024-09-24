@@ -5,7 +5,7 @@ from django.conf import settings
 from nautobot.core.celery import register_jobs
 from nautobot.dcim.models import Location, LocationType
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
-from nautobot.extras.jobs import BooleanVar, JSONVar, ObjectVar
+from nautobot.extras.jobs import BooleanVar, JSONVar, ObjectVar, StringVar
 from nautobot.extras.models import ExternalIntegration
 from nautobot.tenancy.models import Tenant
 from nautobot_ssot.jobs.base import DataSource
@@ -53,17 +53,17 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         default={},
         description="Map of information regarding Networks in Meraki and their parent Location(s).",
     )
-    hostname_mapping = JSONVar(
+    hostname_mapping = StringVar(
         label="Hostname Mapping",
         required=False,
-        default={},
-        description="Map of Device hostnames to Role.",
+        default=[],
+        description="List of tuples containing Device hostnames to assign to specified Role. ex: [('core-router.com', 'router')]",
     )
-    devicetype_mapping = JSONVar(
+    devicetype_mapping = StringVar(
         label="DeviceType Mapping",
         required=False,
-        default={},
-        description="Map of DeviceTypes to Role.",
+        default=[],
+        description="List of tuples containing DeviceTypes to assign to a specified Role. ex: [('MX', 'Firewall')]",
     )
     debug = BooleanVar(description="Enable for more verbose debug logging", default=False)
     tenant = ObjectVar(model=Tenant, label="Tenant", required=False)
@@ -142,8 +142,8 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         self.location_map = kwargs["location_map"]
         self.debug = debug
         self.tenant = kwargs["tenant"]
-        self.hostname_mapping = kwargs["hostname_mapping"]
-        self.devicetype_mapping = kwargs["devicetype_mapping"]
+        self.hostname_mapping = list(kwargs["hostname_mapping"])
+        self.devicetype_mapping = list(kwargs["devicetype_mapping"])
         super().run(dryrun - self.dryrun, memory_profiling=self.memory_profiling, *args, **kwargs)
 
 
