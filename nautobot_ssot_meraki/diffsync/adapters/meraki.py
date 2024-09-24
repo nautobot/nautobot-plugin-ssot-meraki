@@ -350,4 +350,4 @@ class MerakiAdapter(DiffSync):
             self.load_devices()
         else:
             self.job.logger.error("Specified organization ID not found in Meraki dashboard.")
-            raise Exception("Incorrect Organization ID specified.")
+            raise JobException("Incorrect Organization ID specified.")
