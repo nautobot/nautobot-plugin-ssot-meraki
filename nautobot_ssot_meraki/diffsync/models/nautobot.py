@@ -29,7 +29,7 @@ class NautobotNetwork(Network):
         """Create Site in Nautobot from NautobotNetwork object."""
         new_site = Location(
             name=ids["name"],
-            location_type_id=diffsync.locationtype_map[ids["location_type"]],
+            location_type=diffsync.job.network_loctype,
             parent_id=diffsync.region_map[ids["parent"]] if ids.get("parent") else None,
             status_id=diffsync.status_map["Active"],
             time_zone=attrs["timezone"],
