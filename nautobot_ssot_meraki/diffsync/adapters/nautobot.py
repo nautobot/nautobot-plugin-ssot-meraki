@@ -322,6 +322,8 @@ class NautobotAdapter(DiffSync):
 
     def load(self):
         """Load data from Nautobot into DiffSync models."""
+        if self.job.tenant:
+            Namespace.objects.get_or_create(name=self.job.tenant.name)
         self.status_map = {s.name: s.id for s in Status.objects.only("id", "name")}
         self.locationtype_map = {lt.name: lt.id for lt in LocationType.objects.only("id", "name")}
         self.platform_map = {p.name: p.id for p in Platform.objects.only("id", "name")}
