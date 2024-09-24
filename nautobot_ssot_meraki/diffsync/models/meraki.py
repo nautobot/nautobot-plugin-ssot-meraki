@@ -1,6 +1,15 @@
 """Nautobot SSoT for Meraki DiffSync models for Nautobot SSoT for Meraki SSoT."""
 
-from nautobot_ssot_meraki.diffsync.models.base import Device, Hardware, Network, Port, Prefix, IPAddress, IPAssignment
+from nautobot_ssot_meraki.diffsync.models.base import (
+    Device,
+    Hardware,
+    IPAddress,
+    IPAssignment,
+    Network,
+    OSVersion,
+    Port,
+    Prefix,
+)
 
 
 class MerakiNetwork(Network):
@@ -34,6 +43,23 @@ class MerakiHardware(Hardware):
 
     def delete(self):
         """Delete Hardware in Meraki from MerakiHardware object."""
+        return self
+
+
+class MerakiOSVersion(OSVersion):
+    """Meraki implementation of OSVersion DiffSync model."""
+
+    @classmethod
+    def create(cls, diffsync, ids, attrs):
+        """Create OSVersion in Meraki from MerakiOSVersion object."""
+        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+
+    def update(self, attrs):
+        """Update OSVersion in Meraki from MerakiOSVersion object."""
+        return super().update(attrs)
+
+    def delete(self):
+        """Delete OSVersion in Meraki from MerakiOSVersion object."""
         return self
 
 

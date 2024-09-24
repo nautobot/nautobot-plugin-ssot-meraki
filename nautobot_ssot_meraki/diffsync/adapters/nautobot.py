@@ -8,8 +8,17 @@ from diffsync.enum import DiffSyncModelFlags
 from diffsync.exceptions import ObjectNotFound
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import ProtectedError
-from nautobot.dcim.models import Device, DeviceType, Interface, Location, LocationType, Manufacturer, Platform
-from nautobot.extras.models import Note, Relationship, Role, Status
+from nautobot.dcim.models import (
+    Device,
+    DeviceType,
+    Interface,
+    Location,
+    LocationType,
+    Manufacturer,
+    Platform,
+    SoftwareVersion,
+)
+from nautobot.extras.models import Note, Role, Status
 from nautobot.ipam.models import IPAddress, IPAddressToInterface, Namespace, Prefix
 from nautobot.tenancy.models import Tenant
 
@@ -19,6 +28,7 @@ from nautobot_ssot_meraki.diffsync.models.nautobot import (
     NautobotIPAddress,
     NautobotIPAssignment,
     NautobotNetwork,
+    NautobotOSVersion,
     NautobotPort,
     NautobotPrefix,
 )
@@ -30,13 +40,14 @@ class NautobotAdapter(DiffSync):
 
     network = NautobotNetwork
     hardware = NautobotHardware
+    osversion = NautobotOSVersion
     device = NautobotDevice
     port = NautobotPort
     prefix = NautobotPrefix
     ipaddress = NautobotIPAddress
     ipassignment = NautobotIPAssignment
 
-    top_level = ["network", "hardware", "device", "prefix", "ipaddress", "ipassignment"]
+    top_level = ["network", "hardware", "osversion", "device", "prefix", "ipaddress", "ipassignment"]
 
     status_map = {}
     tenant_map = {}
@@ -52,7 +63,6 @@ class NautobotAdapter(DiffSync):
     namespace_map = {}
     prefix_map = {}
     ipaddr_map = {}
-    relationship_map = {}
     contenttype_map = {}
     version_map = {}
 
@@ -113,6 +123,12 @@ class NautobotAdapter(DiffSync):
                 self.add(new_dt)
                 self.devicetype_map[dt.model] = dt.id
 
+    def load_softwareversions(self):
+        """Load SoftwareVersion data from Nautobot into DiffSync model."""
+        for ver in SoftwareVersion.objects.filter(platform__name="Cisco Meraki"):
+            self.get_or_instantiate(self.osversion, ids={"version": ver.version}, attrs={"uuid": ver.id})
+            self.version_map[ver.version] = ver.id
+
     def load_devices(self):
         """Load Device data from Nautobot into DiffSync model."""
         if self.tenant:
@@ -135,7 +151,7 @@ class NautobotAdapter(DiffSync):
                     network=dev.location.name,
                     tenant=dev.tenant.name if dev.tenant else None,
                     uuid=dev.id,
-                    version=dev.software_version.version,
+                    version=dev.software_version.version if dev.software_version else None,
                 )
                 if dev.notes:
                     note = dev.notes.last()
@@ -312,7 +328,6 @@ class NautobotAdapter(DiffSync):
         self.manufacturer_map = {m.name: m.id for m in Manufacturer.objects.only("id", "name")}
         self.devicerole_map = {d.name: d.id for d in Role.objects.only("id", "name")}
         self.namespace_map = {ns.name: ns.id for ns in Namespace.objects.only("id", "name")}
-        self.relationship_map = {r.label: r.id for r in Relationship.objects.only("id", "label")}
         self.contenttype_map = {c.model: c.id for c in ContentType.objects.only("id", "model")}
 
         if self.job.parent_location:
@@ -326,6 +341,7 @@ class NautobotAdapter(DiffSync):
 
         self.load_sites()
         self.load_devicetypes()
+        self.load_softwareversions()
         self.load_devices()
         self.load_ports()
         self.load_prefixes()

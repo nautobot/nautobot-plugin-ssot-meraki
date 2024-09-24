@@ -9,7 +9,16 @@ from nautobot.ipam.models import IPAddress as OrmIPAddress
 from nautobot.ipam.models import IPAddressToInterface
 from nautobot.ipam.models import Prefix as OrmPrefix
 
-from nautobot_ssot_meraki.diffsync.models.base import Device, Hardware, IPAddress, IPAssignment, Network, Port, Prefix
+from nautobot_ssot_meraki.diffsync.models.base import (
+    Device,
+    Hardware,
+    IPAddress,
+    IPAssignment,
+    Network,
+    OSVersion,
+    Port,
+    Prefix,
+)
 
 
 class NautobotNetwork(Network):
@@ -88,6 +97,29 @@ class NautobotHardware(Hardware):
         return self
 
 
+class NautobotOSVersion(OSVersion):
+    """Nautobot implementation of Hardware DiffSync model."""
+
+    @classmethod
+    def create(cls, diffsync, ids, attrs):
+        """Create SoftwareVersion in Nautobot from NautobotOSVersion object."""
+        new_ver = SoftwareVersion(
+            version=ids["version"],
+            status_id=diffsync.status_map["Active"],
+            platform_id=diffsync.platform_map["Cisco Meraki"],
+        )
+        new_ver.validated_save()
+        diffsync.version_map[ids["version"]] = new_ver.id
+        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+
+    def delete(self):
+        """Delete DeviceType in Nautobot from NautobotHardware object."""
+        super().delete()
+        osversion = SoftwareVersion.objects.get(id=self.uuid)
+        osversion.delete()
+        return self
+
+
 class NautobotDevice(Device):
     """Nautobot implementation of Meraki Device model."""
 
@@ -125,9 +157,7 @@ class NautobotDevice(Device):
             else:
                 new_device.tenant = None
         if attrs.get("version"):
-            new_device.software_version = SoftwareVersion.objects.get_or_create(
-                version=attrs["version"], platform_id=diffsync.platform_map["Cisco Meraki"]
-            )[0]
+            new_device.software_version_id = diffsync.version_map[attrs["version"]]
         new_device._custom_field_data["system_of_record"] = "Meraki SSoT"
         new_device._custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         diffsync.objects_to_create["devices"].append(new_device)
@@ -166,9 +196,7 @@ class NautobotDevice(Device):
             else:
                 device.tenant = None
         if "version" in attrs:
-            device.software_version = SoftwareVersion.objects.get_or_create(
-                version=attrs["version"], platform_id=self.diffsync.platform_map["Cisco Meraki"]
-            )[0]
+            device.software_version_id = self.diffsync.version_map[attrs["version"]]
         device._custom_field_data["system_of_record"] = "Meraki SSoT"
         device._custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         device.validated_save()

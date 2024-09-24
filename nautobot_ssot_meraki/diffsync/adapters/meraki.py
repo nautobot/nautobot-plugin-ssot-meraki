@@ -10,9 +10,11 @@ from nautobot_ssot_meraki.diffsync.models.meraki import (
     MerakiIPAddress,
     MerakiIPAssignment,
     MerakiNetwork,
+    MerakiOSVersion,
     MerakiPort,
     MerakiPrefix,
 )
+from nautobot_ssot_meraki.exceptions import JobException
 from nautobot_ssot_meraki.utils.meraki import get_role_from_devicetype, parse_hostname_for_role
 
 
@@ -21,13 +23,14 @@ class MerakiAdapter(DiffSync):
 
     network = MerakiNetwork
     hardware = MerakiHardware
+    osversion = MerakiOSVersion
     device = MerakiDevice
     port = MerakiPort
     prefix = MerakiPrefix
     ipaddress = MerakiIPAddress
     ipassignment = MerakiIPAssignment
 
-    top_level = ["network", "hardware", "device", "prefix", "ipaddress", "ipassignment"]
+    top_level = ["network", "hardware", "osversion", "device", "prefix", "ipaddress", "ipassignment"]
 
     def __init__(self, job, sync, client, tenant=None):
         """Initialize Meraki.
@@ -108,17 +111,7 @@ class MerakiAdapter(DiffSync):
                     else:
                         role = "Unknown"
                     self.load_hardware_model(device_info=dev)
-                    new_dev = self.device(
-                        name=dev["name"],
-                        notes=dev["notes"].rstrip(),
-                        serial=dev["serial"],
-                        status=status,
-                        role=role,
-                        model=dev["model"],
-                        network=self.conn.network_map[dev["networkId"]]["name"],
-                        tenant=self.tenant.name if self.tenant else None,
-                        uuid=None,
-                        version=dev["firmware"],
+                    self.get_or_instantiate(self.osversion, ids={"version": dev["firmware"]})
                     )
                     self.add(new_dev)
                     if dev["model"].startswith(("MX", "MG", "Z")):
