@@ -1,5 +1,7 @@
 """Jobs for Meraki SSoT integration."""
 
+from ast import literal_eval
+
 from diffsync.enum import DiffSyncFlags
 from django.conf import settings
 from nautobot.core.celery import register_jobs
@@ -142,8 +144,8 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         self.location_map = kwargs["location_map"]
         self.debug = debug
         self.tenant = kwargs["tenant"]
-        self.hostname_mapping = list(kwargs["hostname_mapping"])
-        self.devicetype_mapping = list(kwargs["devicetype_mapping"])
+        self.hostname_mapping = literal_eval(kwargs["hostname_mapping"])
+        self.devicetype_mapping = literal_eval(kwargs["devicetype_mapping"])
         super().run(dryrun=self.dryrun, memory_profiling=self.memory_profiling, *args, **kwargs)
 
 
