@@ -114,7 +114,7 @@ class NautobotDevice(Device):
             status_id=diffsync.status_map[attrs["status"]],
             role_id=diffsync.devicerole_map[attrs["role"]],
             device_type_id=diffsync.devicetype_map[attrs["model"]],
-            location_id=diffsync.site_map[attrs["network"]],
+            location=diffsync.site_map[attrs["network"]],
         )
         if attrs.get("notes"):
             new_note = Note(
