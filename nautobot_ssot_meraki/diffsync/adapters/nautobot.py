@@ -66,7 +66,7 @@ class NautobotAdapter(DiffSync):
     contenttype_map = {}
     version_map = {}
 
-    def __init__(self, *args, job, sync=None, tenant: Optional[Tenant] = None, **kwargs):
+    def __init__(self, job, sync=None, tenant: Optional[Tenant] = None):
         """Initialize Nautobot.
 
         Args:
@@ -74,7 +74,7 @@ class NautobotAdapter(DiffSync):
             sync (object, optional): Nautobot DiffSync. Defaults to None.
             tenant (Tenant, optional): Nautobot Tenant to assign to loaded objects. Defaults to None.
         """
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.job = job
         self.sync = sync
         self.tenant = tenant
@@ -245,6 +245,8 @@ class NautobotAdapter(DiffSync):
 
         Args:
             source (DiffSync): DiffSync
+            args (dict): Positional arguments.
+            kwargs (dict): Keyword arguments.
         """
         for grouping in (
             "ipaddrs",
