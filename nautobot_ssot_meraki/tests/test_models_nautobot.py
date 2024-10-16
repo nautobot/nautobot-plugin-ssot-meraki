@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from diffsync import DiffSync
+from diffsync import Adapter
 from django.contrib.contenttypes.models import ContentType
 from nautobot.core.testing import TransactionTestCase
 from nautobot.dcim.models import Location, LocationType
@@ -29,26 +29,26 @@ class TestNautobotPrefix(TransactionTestCase):  # pylint: disable=too-many-insta
         self.prefix = Prefix.objects.create(
             prefix="10.0.0.0/24", namespace=self.test_ns, status=self.status_active, tenant=self.test_tenant
         )
-        self.diffsync = DiffSync()
-        self.diffsync.namespace_map = {"Test": self.test_ns.id, "Update": self.update_site.id}
-        self.diffsync.site_map = {"Test": self.test_site, "Update": self.update_site}
-        self.diffsync.tenant_map = {"Test": self.test_tenant.id, "Update": self.update_tenant.id}
-        self.diffsync.status_map = {"Active": self.status_active.id}
-        self.diffsync.prefix_map = {}
-        self.diffsync.objects_to_create = {"prefixes": []}
-        self.diffsync.objects_to_delete = {"prefixes": []}
+        self.adapter = Adapter()
+        self.adapter.namespace_map = {"Test": self.test_ns.id, "Update": self.update_site.id}
+        self.adapter.site_map = {"Test": self.test_site, "Update": self.update_site}
+        self.adapter.tenant_map = {"Test": self.test_tenant.id, "Update": self.update_tenant.id}
+        self.adapter.status_map = {"Active": self.status_active.id}
+        self.adapter.prefix_map = {}
+        self.adapter.objects_to_create = {"prefixes": []}
+        self.adapter.objects_to_delete = {"prefixes": []}
 
     def test_create(self):
         """Validate the NautobotPrefix create() method creates a Prefix."""
         self.prefix.delete()
         ids = {"prefix": "10.0.0.0/24", "namespace": "Test"}
         attrs = {"location": "Test", "tenant": "Test"}
-        result = NautobotPrefix.create(self.diffsync, ids, attrs)
+        result = NautobotPrefix.create(self.adapter, ids, attrs)
         self.assertIsInstance(result, NautobotPrefix)
-        self.assertEqual(len(self.diffsync.objects_to_create["prefixes"]), 1)
-        subnet = self.diffsync.objects_to_create["prefixes"][0]
+        self.assertEqual(len(self.adapter.objects_to_create["prefixes"]), 1)
+        subnet = self.adapter.objects_to_create["prefixes"][0]
         self.assertEqual(str(subnet.prefix), ids["prefix"])
-        self.assertEqual(self.diffsync.prefix_map[ids["prefix"]], subnet.id)
+        self.assertEqual(self.adapter.prefix_map[ids["prefix"]], subnet.id)
         self.assertEqual(subnet.custom_field_data["system_of_record"], "Meraki SSoT")
 
     def test_update(self):
@@ -60,7 +60,7 @@ class TestNautobotPrefix(TransactionTestCase):  # pylint: disable=too-many-insta
             tenant="Test",
             uuid=self.prefix.id,
         )
-        test_pf.diffsync = self.diffsync
+        test_pf.adapter = self.adapter
         update_attrs = {"location": "Update", "tenant": "Update"}
         actual = NautobotPrefix.update(self=test_pf, attrs=update_attrs)
         self.prefix.refresh_from_db()
@@ -78,8 +78,8 @@ class TestNautobotPrefix(TransactionTestCase):  # pylint: disable=too-many-insta
             tenant="Test",
             uuid=self.prefix.id,
         )
-        test_pf.diffsync = self.diffsync
+        test_pf.adapter = self.adapter
         mock_prefix.return_value = self.prefix
         test_pf.delete()
-        self.assertEqual(len(self.diffsync.objects_to_delete["prefixes"]), 1)
-        self.assertEqual(self.diffsync.objects_to_delete["prefixes"][0].id, self.prefix.id)
+        self.assertEqual(len(self.adapter.objects_to_delete["prefixes"]), 1)
+        self.assertEqual(self.adapter.objects_to_delete["prefixes"][0].id, self.prefix.id)

@@ -3,7 +3,7 @@
 from collections import defaultdict
 from typing import Optional
 
-from diffsync import DiffSync
+from diffsync import Adapter
 from diffsync.enum import DiffSyncModelFlags
 from diffsync.exceptions import ObjectNotFound
 from django.contrib.contenttypes.models import ContentType
@@ -35,7 +35,7 @@ from nautobot_ssot_meraki.diffsync.models.nautobot import (
 from nautobot_ssot_meraki.utils.nautobot import get_tag_strings
 
 
-class NautobotAdapter(DiffSync):
+class NautobotAdapter(Adapter):
     """DiffSync adapter for Nautobot."""
 
     network = NautobotNetwork
@@ -237,14 +237,14 @@ class NautobotAdapter(DiffSync):
                 new_map.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
             self.add(new_map)
 
-    def sync_complete(self, source: DiffSync, *args, **kwargs):
+    def sync_complete(self, source: Adapter, *args, **kwargs):
         """Clean up function for DiffSync sync.
 
         Once the sync is complete, this function runs deleting any objects
         from Nautobot that need to be deleted in a specific order.
 
         Args:
-            source (DiffSync): DiffSync
+            source (Adapter): Source DiffSync Adapter.
             args (dict): Positional arguments.
             kwargs (dict): Keyword arguments.
         """

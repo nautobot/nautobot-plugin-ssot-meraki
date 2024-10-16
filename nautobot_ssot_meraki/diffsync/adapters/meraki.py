@@ -1,6 +1,6 @@
 """Nautobot SSoT for Meraki Adapter for Meraki SSoT plugin."""
 
-from diffsync import DiffSync
+from diffsync import Adapter
 from diffsync.exceptions import ObjectNotFound
 from netutils.ip import ipaddress_interface, netmask_to_cidr
 
@@ -18,7 +18,7 @@ from nautobot_ssot_meraki.exceptions import JobException
 from nautobot_ssot_meraki.utils.meraki import get_role_from_devicetype, parse_hostname_for_role
 
 
-class MerakiAdapter(DiffSync):
+class MerakiAdapter(Adapter):
     """DiffSync adapter for Meraki."""
 
     network = MerakiNetwork
@@ -192,7 +192,7 @@ class MerakiAdapter(DiffSync):
                 self.get(self.port, {"name": port["number"], "device": device.name})
             except ObjectNotFound:
                 new_port = self.port(
-                    name=port["number"],
+                    name=str(port["number"]),
                     device=device.name,
                     management=False,
                     enabled=port["enabled"],
