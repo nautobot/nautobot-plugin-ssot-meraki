@@ -63,6 +63,7 @@ python-semantic-release = "*"
 
 [tool.poetry.extras]
 nautobot = ["nautobot"]
+all = ["nautobot"]
 
 [tool.pylint.master]
 # Include the pylint_django plugin to avoid spurious warnings about Django patterns
