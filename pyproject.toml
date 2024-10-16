@@ -3,19 +3,32 @@ name = "nautobot-ssot-meraki"
 version = "2.1.0"
 description = "Nautobot SSoT for Meraki"
 authors = ["Justin Drew <info@networktocode.com>"]
+license = "Apache-2.0"
 readme = "README.md"
 homepage = "https://github.com/nautobot/nautobot-app-ssot-meraki"
 repository = "https://github.com/nautobot/nautobot-app-ssot-meraki"
-keywords = ["nautobot", "nautobot-plugin"]
-include = [
-    "README.md",
+documentation = "https://docs.nautobot.com/projects/nautobot-ssot-meraki/en/latest/"
+keywords = ["nautobot", "nautobot-app", "nautobot-plugin"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 packages = [
     { include = "nautobot_ssot_meraki" },
 ]
+include = [
+    # Poetry by default will exclude files that are in .gitignore
+    "nautobot_ssot_meraki/static/nautobot_ssot_meraki/docs/**/*",
+]
 
 [tool.poetry.dependencies]
-python = "^3.8, <3.12"
+python = "^3.8, <3.13"
 # Used for local development
 nautobot = "^2.2.0"
 meraki = "^1.37.2"
