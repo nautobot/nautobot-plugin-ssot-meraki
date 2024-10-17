@@ -3,7 +3,6 @@
 from ast import literal_eval
 
 from diffsync.enum import DiffSyncFlags
-from django.conf import settings
 from nautobot.core.celery import register_jobs
 from nautobot.dcim.models import Location, LocationType
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
@@ -15,8 +14,6 @@ from nautobot_ssot.jobs.base import DataSource
 from nautobot_ssot_meraki.diffsync.adapters import meraki, nautobot
 from nautobot_ssot_meraki.exceptions import JobException
 from nautobot_ssot_meraki.utils.meraki import DashboardClient
-
-PLUGIN_CFG = settings.PLUGINS_CONFIG["nautobot_ssot_meraki"]
 
 name = "Meraki SSoT"  # pylint: disable=invalid-name
 
