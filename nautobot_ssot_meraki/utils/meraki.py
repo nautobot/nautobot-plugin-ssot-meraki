@@ -3,9 +3,6 @@
 import re
 
 import meraki
-from django.conf import settings
-
-PLUGIN_CFG = settings.PLUGINS_CONFIG["nautobot_ssot_meraki"]
 
 
 class DashboardClient:
@@ -208,34 +205,36 @@ class DashboardClient:
         return ports
 
 
-def parse_hostname_for_role(dev_hostname: str) -> str:
+def parse_hostname_for_role(dev_hostname: str, hostname_map: dict) -> str:
     """Parse device hostname to get Device Role.
 
     Args:
         dev_hostname (str): Hostname of Device to determine role of.
+        hostname_map (dict): Dictionary of hostname's mapped to their Role.
 
     Returns:
         str: Name of DeviceRole. Defaults to Unknown.
     """
     dev_role = "Unknown"
-    for entry in PLUGIN_CFG["hostname_mapping"]:
+    for entry in hostname_map:
         match = re.match(pattern=entry[0], string=dev_hostname)
         if match:
             dev_role = entry[1]
     return dev_role
 
 
-def get_role_from_devicetype(dev_model: str) -> str:
+def get_role_from_devicetype(dev_model: str, devicetype_map: dict) -> str:
     """Get Device Role using DeviceType from devicetype_mapping Setting.
 
     Args:
         dev_model (str): Hardware model of Device to determine role of.
+        devicetype_map (dict): Dictionary of DeviceType's mapped to their Role.
 
     Returns:
         str: Name of DeviceRole. Defaults to Unknown.
     """
     dev_role = "Unknown"
-    for entry in PLUGIN_CFG["devicetype_mapping"]:
+    for entry in devicetype_map:
         if entry[0] in dev_model:
             dev_role = entry[1]
     return dev_role

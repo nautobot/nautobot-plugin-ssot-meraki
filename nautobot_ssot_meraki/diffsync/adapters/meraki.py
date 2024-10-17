@@ -92,11 +92,13 @@ class MerakiAdapter(Adapter):
                     if self.job.hostname_mapping and len(self.job.hostname_mapping) > 0:
                         if self.job.debug:
                             self.job.logger.debug(f"Parsing hostname for device {dev['name']} to determine role.")
-                        role = parse_hostname_for_role(dev_hostname=dev["name"])
+                        role = parse_hostname_for_role(dev_hostname=dev["name"], hostname_map=self.job.hostname_mapping)
                     elif self.job.devicetype_mapping and len(self.job.devicetype_mapping) > 0:
                         if self.job.debug:
                             self.job.logger.debug(f"Parsing device model for device {dev['name']} to determine role.")
-                        role = get_role_from_devicetype(dev_model=dev["model"])
+                        role = get_role_from_devicetype(
+                            dev_model=dev["model"], devicetype_map=self.job.devicetype_mapping
+                        )
                     else:
                         role = "Unknown"
                     self.load_hardware_model(device_info=dev)
