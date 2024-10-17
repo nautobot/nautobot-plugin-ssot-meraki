@@ -16,9 +16,9 @@ class MerakiNetwork(Network):
     """Meraki implementation of Network DiffSync model."""
 
     @classmethod
-    def create(cls, diffsync, ids, attrs):
+    def create(cls, adapter, ids, attrs):
         """Create Network in Meraki from MerakiNetwork object."""
-        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+        return super().create(adapter=adapter, ids=ids, attrs=attrs)
 
     def update(self, attrs):
         """Update Network in Meraki from MerakiNetwork object."""
@@ -33,9 +33,9 @@ class MerakiHardware(Hardware):
     """Meraki implementation of Hardware DiffSync model."""
 
     @classmethod
-    def create(cls, diffsync, ids, attrs):
+    def create(cls, adapter, ids, attrs):
         """Create Hardware in Meraki from MerakiHardware object."""
-        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+        return super().create(adapter=adapter, ids=ids, attrs=attrs)
 
     def update(self, attrs):
         """Update Hardware in Meraki from MerakiHardware object."""
@@ -50,9 +50,9 @@ class MerakiOSVersion(OSVersion):
     """Meraki implementation of OSVersion DiffSync model."""
 
     @classmethod
-    def create(cls, diffsync, ids, attrs):
+    def create(cls, adapter, ids, attrs):
         """Create OSVersion in Meraki from MerakiOSVersion object."""
-        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+        return super().create(adapter=adapter, ids=ids, attrs=attrs)
 
     def update(self, attrs):
         """Update OSVersion in Meraki from MerakiOSVersion object."""
@@ -67,9 +67,9 @@ class MerakiDevice(Device):
     """Meraki implementation of Device DiffSync model."""
 
     @classmethod
-    def create(cls, diffsync, ids, attrs):
+    def create(cls, adapter, ids, attrs):
         """Create Device in Meraki from MerakiDevice object."""
-        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+        return super().create(adapter=adapter, ids=ids, attrs=attrs)
 
     def update(self, attrs):
         """Update Device in Meraki from MerakiDevice object."""
@@ -84,9 +84,9 @@ class MerakiPort(Port):
     """Meraki implementation of Port DiffSync model."""
 
     @classmethod
-    def create(cls, diffsync, ids, attrs):
+    def create(cls, adapter, ids, attrs):
         """Create Port in Meraki from MerakiPort object."""
-        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+        return super().create(adapter=adapter, ids=ids, attrs=attrs)
 
     def update(self, attrs):
         """Update Port in Meraki from MerakiPort object."""
@@ -101,9 +101,9 @@ class MerakiPrefix(Prefix):
     """Meraki implementation of Prefix DiffSync model."""
 
     @classmethod
-    def create(cls, diffsync, ids, attrs):
+    def create(cls, adapter, ids, attrs):
         """Create Prefix in Meraki from MerakiPrefix object."""
-        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+        return super().create(adapter=adapter, ids=ids, attrs=attrs)
 
     def update(self, attrs):
         """Update Prefix in Meraki from MerakiPrefix object."""
@@ -118,9 +118,9 @@ class MerakiIPAddress(IPAddress):
     """Meraki implementation of IPAddress DiffSync model."""
 
     @classmethod
-    def create(cls, diffsync, ids, attrs):
+    def create(cls, adapter, ids, attrs):
         """Create IPAddress in Meraki from MerakiIPAddress object."""
-        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+        return super().create(adapter=adapter, ids=ids, attrs=attrs)
 
     def update(self, attrs):
         """Update IPAddress in Meraki from MerakiIPAddress object."""
@@ -135,14 +135,14 @@ class MerakiIPAssignment(IPAssignment):
     """Meraki implementation of IPAddress DiffSync model."""
 
     @classmethod
-    def create(cls, diffsync, ids, attrs):
+    def create(cls, adapter, ids, attrs):
         """Create IPAddressToInterface in Meraki from MerakiIPAssignment object."""
-        return super().create(diffsync=diffsync, ids=ids, attrs=attrs)
+        return super().create(adapter=adapter, ids=ids, attrs=attrs)
 
     def update(self, attrs):
         """Update IPAddressToInterface in Meraki from MerakiIPAssignment object."""
         return super().update(attrs)
 
     def delete(self):
-        """Delete IPAddressToInterface in Meraki from MerakiIMerakiIPAssignmentPAddress object."""
+        """Delete IPAddressToInterface in Meraki from MerakiIPAssignment object."""
         return self
