@@ -308,11 +308,10 @@ class NautobotIPAddress(IPAddress):
     @classmethod
     def create(cls, adapter, ids, attrs):
         """Create IPAddress in Nautobot from NautobotIPAddress object."""
+        namespace = attrs["tenant"] if attrs.get("tenant") else "Global"
         new_ip = OrmIPAddress(
             address=ids["address"],
-            namespace=(
-                adapter.namespace_map[attrs["tenant"]] if attrs.get("tenant") else adapter.namespace_map["Global"]
-            ),
+            namespace=adapter.namespace_map[namespace],
             status_id=adapter.status_map["Active"],
             tenant_id=adapter.tenant_map[attrs["tenant"]] if attrs.get("tenant") else None,
         )
@@ -320,9 +319,9 @@ class NautobotIPAddress(IPAddress):
         new_ip.cf["system_of_record"] = "Meraki SSoT"
         new_ip.cf["ssot_last_synchronized"] = datetime.today().date().isoformat()
         adapter.objects_to_create["ipaddrs"].append(new_ip)
-        if attrs["tenant"] not in adapter.ipaddr_map:
-            adapter.ipaddr_map[attrs["tenant"]] = {}
-        adapter.ipaddr_map[attrs["tenant"]][ids["address"]] = new_ip.id
+        if namespace not in adapter.ipaddr_map:
+            adapter.ipaddr_map[namespace] = {}
+        adapter.ipaddr_map[namespace][ids["address"]] = new_ip.id
         return super().create(adapter=adapter, ids=ids, attrs=attrs)
 
     def update(self, attrs):
