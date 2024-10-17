@@ -265,11 +265,12 @@ class NautobotPrefix(Prefix):
         """Create Prefix in Nautobot from NautobotPrefix object."""
         new_pf = OrmPrefix(
             prefix=ids["prefix"],
-            location=adapter.site_map[attrs["location"]],
             namespace_id=adapter.namespace_map[ids["namespace"]],
             status_id=adapter.status_map["Active"],
             tenant_id=adapter.tenant_map[attrs["tenant"]] if attrs.get("tenant") else None,
         )
+        if attrs.get("location"):
+            new_pf.locations.add(adapter.site_map[attrs["location"]])
         new_pf.custom_field_data["system_of_record"] = "Meraki SSoT"
         new_pf.custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         adapter.objects_to_create["prefixes"].append(new_pf)
@@ -281,9 +282,9 @@ class NautobotPrefix(Prefix):
         prefix = OrmPrefix.objects.get(id=self.uuid)
         if "location" in attrs:
             if attrs.get("location"):
-                prefix.location = self.adapter.site_map[attrs["location"]]
+                prefix.locations.add(self.adapter.site_map[attrs["location"]])
             else:
-                prefix.location = None
+                prefix.locations.remove(self.adapter.site_map[self.location])
         if "tenant" in attrs:
             if attrs.get("tenant"):
                 prefix.tenant_id = self.adapter.tenant_map[attrs["tenant"]]
