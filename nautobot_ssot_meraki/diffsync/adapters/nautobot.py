@@ -276,6 +276,11 @@ class NautobotAdapter(Adapter):
         if len(self.objects_to_create["prefixes"]) > 0:
             self.job.logger.info("Performing bulk create of Prefixes in Nautobot")
             Prefix.objects.bulk_create(self.objects_to_create["prefixes"], batch_size=250)
+        if len(self.objects_to_create["prefix_locs"]) > 0:
+            self.job.logger.info("Performing assignment of Locations to Prefixes in Nautobot")
+            for pair in self.objects_to_create["prefix_locs"]:
+                update_pf = Prefix.objects.get(id=pair[0])
+                update_pf.locations.add(pair[1])
         if len(self.objects_to_create["ipaddrs"]) > 0:
             self.job.logger.info("Performing bulk create of IP Addresses in Nautobot")
             IPAddress.objects.bulk_create(self.objects_to_create["ipaddrs"], batch_size=250)

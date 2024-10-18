@@ -270,7 +270,7 @@ class NautobotPrefix(Prefix):
             tenant_id=adapter.tenant_map[attrs["tenant"]] if attrs.get("tenant") else None,
         )
         if attrs.get("location"):
-            new_pf.locations.add(adapter.site_map[attrs["location"]])
+            adapter.objects_to_create["prefix_locs"].append((new_pf.id, adapter.site_map[attrs["location"]]))
         new_pf.custom_field_data["system_of_record"] = "Meraki SSoT"
         new_pf.custom_field_data["ssot_last_synchronized"] = datetime.today().date().isoformat()
         adapter.objects_to_create["prefixes"].append(new_pf)
