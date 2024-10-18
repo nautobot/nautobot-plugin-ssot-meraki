@@ -264,6 +264,11 @@ class NautobotAdapter(Adapter):  # pylint: disable=too-many-instance-attributes
                     self.job.logger.warning(f"Deletion failed protected object: {nautobot_object}")
             self.objects_to_delete[grouping] = []
 
+        self.process_objects_to_create()
+        return super().sync_complete(source, *args, **kwargs)
+
+    def process_objects_to_create(self):
+        """Process all of the objects that have been added to the objects_to_create dictionary."""
         if len(self.objects_to_create["devicetypes"]) > 0:
             self.job.logger.info("Performing bulk create of DeviceTypes in Nautobot")
             DeviceType.objects.bulk_create(self.objects_to_create["devicetypes"], batch_size=250)
@@ -314,7 +319,6 @@ class NautobotAdapter(Adapter):  # pylint: disable=too-many-instance-attributes
         if len(self.objects_to_create["notes"]) > 0:
             self.job.logger.info("Performing bulk create of Notes in Nautobot")
             Note.objects.bulk_create(self.objects_to_create["notes"], batch_size=250)
-        return super().sync_complete(source, *args, **kwargs)
 
     def load(self):
         """Load data from Nautobot into DiffSync models."""
