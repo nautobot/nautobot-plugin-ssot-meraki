@@ -35,7 +35,7 @@ class TestNautobotPrefix(TransactionTestCase):  # pylint: disable=too-many-insta
         self.adapter.tenant_map = {"Test": self.test_tenant.id, "Update": self.update_tenant.id}
         self.adapter.status_map = {"Active": self.status_active.id}
         self.adapter.prefix_map = {}
-        self.adapter.objects_to_create = {"prefixes": []}
+        self.adapter.objects_to_create = {"prefixes": [], "prefix_locs": []}
         self.adapter.objects_to_delete = {"prefixes": []}
 
     def test_create(self):

@@ -35,7 +35,7 @@ from nautobot_ssot_meraki.diffsync.models.nautobot import (
 from nautobot_ssot_meraki.utils.nautobot import get_tag_strings
 
 
-class NautobotAdapter(Adapter):
+class NautobotAdapter(Adapter):  # pylint: disable=too-many-instance-attributes
     """DiffSync adapter for Nautobot."""
 
     network = NautobotNetwork
@@ -102,15 +102,15 @@ class NautobotAdapter(Adapter):
 
     def load_devicetypes(self):
         """Load DeviceType data from Nautobot into DiffSync model."""
-        for dt in DeviceType.objects.filter(manufacturer__name="Cisco Meraki"):
+        for devtype in DeviceType.objects.filter(manufacturer__name="Cisco Meraki"):
             try:
-                self.get(self.hardware, dt.model)
+                self.get(self.hardware, devtype.model)
             except ObjectNotFound:
-                new_dt = self.hardware(model=dt.model, uuid=dt.id)
+                new_dt = self.hardware(model=devtype.model, uuid=devtype.id)
                 if self.tenant:
                     new_dt.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
                 self.add(new_dt)
-                self.devicetype_map[dt.model] = dt.id
+                self.devicetype_map[devtype.model] = devtype.id
 
     def load_softwareversions(self):
         """Load SoftwareVersion data from Nautobot into DiffSync model."""
@@ -167,7 +167,7 @@ class NautobotAdapter(Adapter):
                     enabled=intf.enabled,
                     port_type=intf.type,
                     port_status=intf.status.name,
-                    tagging=False if intf.mode == "access" else True,
+                    tagging=bool(intf.mode != "access"),
                     uuid=intf.id,
                 )
                 if self.tenant:
@@ -237,7 +237,7 @@ class NautobotAdapter(Adapter):
                 new_map.model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
             self.add(new_map)
 
-    def sync_complete(self, source: Adapter, *args, **kwargs):
+    def sync_complete(self, source: Adapter, *args, **kwargs):  # pylint: disable=too-many-branches
         """Clean up function for DiffSync sync.
 
         Once the sync is complete, this function runs deleting any objects
@@ -298,17 +298,17 @@ class NautobotAdapter(Adapter):
         if len(self.objects_to_create["device_primary_ip4"]) > 0:
             self.job.logger.info("Performing bulk update of IPv4 addresses in Nautobot.")
             device_primary_ip_objs = []
-            for d in self.objects_to_create["device_primary_ip4"]:
-                dev = Device.objects.get(id=d[0])
-                dev.primary_ip4_id = d[1]
+            for devip in self.objects_to_create["device_primary_ip4"]:
+                dev = Device.objects.get(id=devip[0])
+                dev.primary_ip4_id = devip[1]
                 device_primary_ip_objs.append(dev)
             Device.objects.bulk_update(device_primary_ip_objs, ["primary_ip4_id"], batch_size=250)
         if len(self.objects_to_create["device_primary_ip6"]) > 0:
             self.job.logger.info("Performing bulk update of IPv6 addresses in Nautobot.")
             device_primary_ip_objs = []
-            for d in self.objects_to_create["device_primary_ip6"]:
-                dev = Device.objects.get(id=d[0])
-                dev.primary_ip6_id = d[1]
+            for devip in self.objects_to_create["device_primary_ip6"]:
+                dev = Device.objects.get(id=devip[0])
+                dev.primary_ip6_id = devip[1]
                 device_primary_ip_objs.append(dev)
             Device.objects.bulk_update(device_primary_ip_objs, ["primary_ip6_id"], batch_size=250)
         if len(self.objects_to_create["notes"]) > 0:
