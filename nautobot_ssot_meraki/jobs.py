@@ -1,11 +1,12 @@
 """Jobs for Meraki SSoT integration."""
 
+from ast import literal_eval
+
 from diffsync.enum import DiffSyncFlags
-from django.conf import settings
 from nautobot.core.celery import register_jobs
 from nautobot.dcim.models import Location, LocationType
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
-from nautobot.extras.jobs import BooleanVar, JSONVar, ObjectVar
+from nautobot.extras.jobs import BooleanVar, JSONVar, ObjectVar, StringVar
 from nautobot.extras.models import ExternalIntegration
 from nautobot.tenancy.models import Tenant
 from nautobot_ssot.jobs.base import DataSource
@@ -13,8 +14,6 @@ from nautobot_ssot.jobs.base import DataSource
 from nautobot_ssot_meraki.diffsync.adapters import meraki, nautobot
 from nautobot_ssot_meraki.exceptions import JobException
 from nautobot_ssot_meraki.utils.meraki import DashboardClient
-
-PLUGIN_CFG = settings.PLUGINS_CONFIG["nautobot_ssot_meraki"]
 
 name = "Meraki SSoT"  # pylint: disable=invalid-name
 
@@ -52,6 +51,18 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         required=False,
         default={},
         description="Map of information regarding Networks in Meraki and their parent Location(s).",
+    )
+    hostname_mapping = StringVar(
+        label="Hostname Mapping",
+        required=False,
+        default=[],
+        description="List of tuples containing Device hostnames to assign to specified Role. ex: [('core-router.com', 'router')]",
+    )
+    devicetype_mapping = StringVar(
+        label="DeviceType Mapping",
+        required=False,
+        default=[],
+        description="List of tuples containing DeviceTypes to assign to a specified Role. ex: [('MX', 'Firewall')]",
     )
     debug = BooleanVar(description="Enable for more verbose debug logging", default=False)
     tenant = ObjectVar(model=Tenant, label="Tenant", required=False)
@@ -117,22 +128,22 @@ class MerakiDataSource(DataSource):  # pylint: disable=too-many-instance-attribu
         self,
         dryrun,
         memory_profiling,
-        instance,
         debug,
-        tenant,
         *args,
         **kwargs,
-    ):  # pylint: disable=arguments-differ, too-many-arguments
+    ):  # pylint: disable=arguments-differ
         """Perform data synchronization."""
         self.dryrun = dryrun
         self.memory_profiling = memory_profiling
-        self.instance = instance
+        self.instance = kwargs["instance"]
         self.network_loctype = kwargs["network_loctype"]
         self.parent_location = kwargs["parent_location"]
         self.location_map = kwargs["location_map"]
         self.debug = debug
-        self.tenant = tenant
-        super().run(dryrun - self.dryrun, memory_profiling=self.memory_profiling, *args, **kwargs)
+        self.tenant = kwargs["tenant"]
+        self.hostname_mapping = literal_eval(kwargs["hostname_mapping"])
+        self.devicetype_mapping = literal_eval(kwargs["devicetype_mapping"])
+        super().run(dryrun=self.dryrun, memory_profiling=self.memory_profiling, *args, **kwargs)
 
 
 jobs = [MerakiDataSource]

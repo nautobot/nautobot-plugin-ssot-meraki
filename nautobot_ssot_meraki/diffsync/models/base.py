@@ -10,22 +10,24 @@ from diffsync.enum import DiffSyncModelFlags
 class Network(DiffSyncModel):
     """DiffSync model for Meraki networks."""
 
-    model_flags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
+    model_flags: DiffSyncModelFlags = DiffSyncModelFlags.SKIP_UNMATCHED_DST
 
     _modelname = "network"
-    _identifiers = ("name", "parent", "location_type")
+    _identifiers = (
+        "name",
+        "parent",
+    )
     _attributes = ("timezone", "notes", "tags", "tenant")
     _children = {}
 
     name: str
-    location_type: str
-    parent: Optional[str]
-    timezone: Optional[str]
-    notes: Optional[str]
-    tags: Optional[List[str]]
-    tenant: Optional[str]
+    parent: Optional[str] = None
+    timezone: Optional[str] = None
+    notes: Optional[str] = None
+    tags: Optional[List[str]] = None
+    tenant: Optional[str] = None
 
-    uuid: Optional[UUID]
+    uuid: Optional[UUID] = None
 
 
 class Hardware(DiffSyncModel):
@@ -38,7 +40,20 @@ class Hardware(DiffSyncModel):
 
     model: str
 
-    uuid: Optional[UUID]
+    uuid: Optional[UUID] = None
+
+
+class OSVersion(DiffSyncModel):
+    """DiffSync model for Meraki device software versions."""
+
+    _modelname = "osversion"
+    _identifiers = ("version",)
+    _attributes = ()
+    _children = {}
+
+    version: str
+
+    uuid: Optional[UUID] = None
 
 
 class Device(DiffSyncModel):
@@ -50,17 +65,17 @@ class Device(DiffSyncModel):
     _children = {"port": "ports"}
 
     name: str
-    notes: Optional[str]
-    serial: Optional[str]
-    status: Optional[str]
-    role: Optional[str]
-    model: Optional[str]
+    notes: Optional[str] = None
+    serial: Optional[str] = None
+    status: Optional[str] = None
+    role: Optional[str] = None
+    model: Optional[str] = None
     network: str
-    tenant: Optional[str]
-    version: Optional[str]
+    tenant: Optional[str] = None
+    version: Optional[str] = None
     ports: List["Port"] = []
 
-    uuid: Optional[UUID]
+    uuid: Optional[UUID] = None
 
 
 class Port(DiffSyncModel):
@@ -79,7 +94,7 @@ class Port(DiffSyncModel):
     port_status: str
     tagging: bool
 
-    uuid: Optional[UUID]
+    uuid: Optional[UUID] = None
 
 
 class Prefix(DiffSyncModel):
@@ -93,9 +108,9 @@ class Prefix(DiffSyncModel):
     prefix: str
     namespace: str
     location: str
-    tenant: Optional[str]
+    tenant: Optional[str] = None
 
-    uuid: Optional[UUID]
+    uuid: Optional[UUID] = None
 
 
 class IPAddress(DiffSyncModel):
@@ -108,9 +123,9 @@ class IPAddress(DiffSyncModel):
 
     address: str
     prefix: str
-    tenant: Optional[str]
+    tenant: Optional[str] = None
 
-    uuid: Optional[UUID]
+    uuid: Optional[UUID] = None
 
 
 class IPAssignment(DiffSyncModel):
@@ -127,4 +142,4 @@ class IPAssignment(DiffSyncModel):
     port: str
     primary: bool
 
-    uuid: Optional[UUID]
+    uuid: Optional[UUID] = None

@@ -11,17 +11,12 @@ def nautobot_database_ready_callback(sender, *, apps, **kwargs):  # pylint: disa
     # pylint: disable=invalid-name, too-many-locals
     ContentType = apps.get_model("contenttypes", "ContentType")
     CustomField = apps.get_model("extras", "CustomField")
-    LocationType = apps.get_model("dcim", "LocationType")
     Device = apps.get_model("dcim", "Device")
     Interface = apps.get_model("dcim", "Interface")
     Prefix = apps.get_model("ipam", "Prefix")
     IPAddress = apps.get_model("ipam", "IPAddress")
     Manufacturer = apps.get_model("dcim", "Manufacturer")
     Platform = apps.get_model("dcim", "Platform")
-
-    site = LocationType.objects.update_or_create(name="Site", defaults={"nestable": False})[0]
-    site.content_types.add(ContentType.objects.get_for_model(Device))
-    site.content_types.add(ContentType.objects.get_for_model(Prefix))
 
     cisco_manu = Manufacturer.objects.get_or_create(name="Cisco Meraki")[0]
     plat_dict = {
@@ -30,13 +25,6 @@ def nautobot_database_ready_callback(sender, *, apps, **kwargs):  # pylint: disa
         "network_driver": "cisco_meraki",
     }
     Platform.objects.update_or_create(name__icontains="Meraki", defaults=plat_dict)
-    os_cf_dict = {
-        "key": "os_version",
-        "type": CustomFieldTypeChoices.TYPE_TEXT,
-        "label": "OS Version",
-    }
-    ver_field, _ = CustomField.objects.get_or_create(key=os_cf_dict["key"], defaults=os_cf_dict)
-    ver_field.content_types.add(ContentType.objects.get_for_model(Device))
 
     sor_cf_dict = {
         "type": CustomFieldTypeChoices.TYPE_TEXT,

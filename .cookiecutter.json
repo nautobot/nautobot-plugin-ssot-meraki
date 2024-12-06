@@ -4,14 +4,14 @@
         "full_name": "Justin Drew",
         "email": "info@networktocode.com",
         "github_org": "nautobot",
-        "plugin_name": "nautobot_ssot_meraki",
+        "app_name": "nautobot_ssot_meraki",
         "verbose_name": "Nautobot SSoT for Meraki",
-        "plugin_slug": "nautobot-ssot-meraki",
-        "project_slug": "nautobot-plugin-ssot-meraki",
-        "repo_url": "https://github.com/nautobot/nautobot-plugin-ssot-meraki",
+        "app_slug": "nautobot-ssot-meraki",
+        "project_slug": "nautobot-app-ssot-meraki",
+        "repo_url": "https://github.com/nautobot/nautobot-app-ssot-meraki",
         "base_url": "nautobot-ssot-meraki",
-        "min_nautobot_version": "1.6.0",
-        "max_nautobot_version": "1.9999",
+        "min_nautobot_version": "2.2.0",
+        "max_nautobot_version": "2.9999",
         "nautobot_version": "latest",
         "camel_name": "NautobotSsotMeraki",
         "project_short_description": "Nautobot SSoT for Meraki",
@@ -21,6 +21,6 @@
         "docs_base_url": "https://docs.nautobot.com",
         "docs_app_url": "https://docs.nautobot.com/projects/nautobot-ssot-meraki/en/latest",
         "_template": "gh:networktocode-llc/cookiecutter-ntc",
-        "_output_dir": "/Users/justin.drew/Projects/Customers/corn"
+        "_output_dir": "/Users/justin.drew/Projects/Customers"
     }
 }

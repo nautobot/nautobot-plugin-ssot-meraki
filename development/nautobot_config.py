@@ -1,11 +1,11 @@
 """Nautobot development configuration file."""
+
 # pylint: disable=invalid-envvar-default
 import os
 import sys
 
 from nautobot.core.settings import *  # noqa: F403  # pylint: disable=wildcard-import,unused-wildcard-import
-from nautobot.core.settings_funcs import parse_redis_connection, is_truthy
-
+from nautobot.core.settings_funcs import is_truthy, parse_redis_connection
 
 #
 # Misc. settings
@@ -132,7 +132,7 @@ CACHEOPS_REDIS = parse_redis_connection(redis_database=1)
 #
 
 # Enable installed plugins. Add the name of each plugin to the list.
-PLUGINS = ["nautobot_ssot", "nautobot_ssot_meraki", "nautobot_device_lifecycle_mgmt"]
+PLUGINS = ["nautobot_ssot", "nautobot_ssot_meraki"]
 
 # Plugins configuration settings. These settings are used by various plugins that the user may have installed.
 # Each key in the dictionary is the name of an installed plugin and its value is a dictionary of settings.
@@ -141,9 +141,12 @@ PLUGINS_CONFIG = {
         "hide_example_jobs": True,
     },
     "nautobot_ssot_meraki": {
-        "meraki_org_id": os.getenv("MERAKI_ORG_ID", ""),
-        "meraki_token": os.getenv("MERAKI_TOKEN", ""),
-        "update_locations": is_truthy(os.getenv("NAUTOBOT_DNAC_SSOT_UPDATE_LOCATIONS", False)),
-        "hostname_mapping": [],
+        "hostname_mapping": [(".*FW.*", "Firewall")],
+        "devicetype_mapping": [
+            ("MR", "Wireless Access Point"),
+            ("MX", "Firewall"),
+            ("MS", "User Switch"),
+            ("MV", "Video"),
+        ],
     },
 }

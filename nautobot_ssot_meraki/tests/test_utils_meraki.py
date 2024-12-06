@@ -1,9 +1,12 @@
 """Unit tests for Meraki utility functions."""
+
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
+
 import meraki
-from nautobot_ssot_meraki.utils.meraki import DashboardClient
+
 from nautobot_ssot_meraki.tests.fixtures import fixtures as fix
+from nautobot_ssot_meraki.utils.meraki import DashboardClient
 
 
 class TestDashboardClient(TestCase):
